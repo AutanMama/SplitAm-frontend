@@ -1,14 +1,20 @@
 import React from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import api from '../services/api';
 
 const Navbar = () => {
-  const navigate = useNavigate();
   const location = useLocation();
-  const token = localStorage.getItem('token');
-  const user = JSON.parse(localStorage.getItem('user'));
+  const storedUser = localStorage.getItem('user');
+  const user = storedUser ? JSON.parse(storedUser) : null;
+  const token = !!storedUser; // legacy variable name; truthy when logged in
 
-  const logout = () => {
-    localStorage.clear();
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (err) {
+      // Even if the request fails (offline, network), still clear local state
+    }
+    localStorage.removeItem('user');
     window.location.href = '/login';
   };
 
@@ -36,7 +42,7 @@ const Navbar = () => {
               to="/" 
               className={`flex flex-col items-center gap-1 group relative ${isActive('/') ? 'text-emerald-600' : 'text-slate-400'}`}
             >
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] transition-colors group-hover:text-emerald-500">Groups</span>
+              <span className="text-xs font-bold transition-colors group-hover:text-emerald-500">Groups</span>
               {isActive('/') && <div className="w-1 h-1 bg-emerald-600 rounded-full absolute -bottom-2"></div>}
             </Link>
 
@@ -45,7 +51,7 @@ const Navbar = () => {
               to="/create-group" 
               className={`flex flex-col items-center gap-1 group relative ${isActive('/create-group') ? 'text-emerald-600' : 'text-slate-400'}`}
             >
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] transition-colors group-hover:text-emerald-500">New</span>
+              <span className="text-xs font-bold transition-colors group-hover:text-emerald-500">New</span>
               {isActive('/create-group') && <div className="w-1 h-1 bg-emerald-600 rounded-full absolute -bottom-2"></div>}
             </Link>
 
@@ -64,32 +70,32 @@ const Navbar = () => {
             </Link>
 
             {/* Desktop Logout - Styled as a ghost button */}
-            <button 
+            <button
               onClick={logout}
-              className="hidden md:block text-[9px] font-black text-rose-400 uppercase tracking-widest hover:text-rose-600 px-4 py-2 rounded-xl transition-colors border border-transparent hover:border-rose-100"
+              className="hidden md:block text-xs font-bold text-rose-400 hover:text-rose-600 px-4 py-2 rounded-xl transition-colors border border-transparent hover:border-rose-100"
             >
-              Logout
+              Sign out
             </button>
           </>
         ) : (
           /* LOGGED OUT STATE */
-          <div className="flex items-center gap-4 w-full justify-center md:justify-end">
+          <div className="flex items-center gap-3 w-full justify-center md:justify-end">
             {!isAuthPage ? (
               <>
-                <Link to="/login" className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 px-4 py-2 transition-all">
-                  Login
+                <Link to="/login" className="text-sm font-bold text-slate-500 hover:text-slate-900 px-4 py-2 transition-all">
+                  Sign in
                 </Link>
-                <Link to="/register" className="bg-slate-900 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] shadow-xl shadow-slate-200 hover:bg-emerald-600 active:scale-95 transition-all">
-                  Get Started
+                <Link to="/register" className="bg-slate-900 text-white px-5 py-3 rounded-2xl text-sm font-bold shadow-xl shadow-slate-200 hover:bg-emerald-600 active:scale-95 transition-all">
+                  Sign up
                 </Link>
               </>
             ) : (
               <Link to={location.pathname === '/login' ? "/register" : "/login"} className="group flex items-center gap-2">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-emerald-600 transition-colors">
-                  {location.pathname === '/login' ? "New Here?" : "Have an account?"}
+                <span className="text-sm font-bold text-slate-500 group-hover:text-emerald-600 transition-colors">
+                  {location.pathname === '/login' ? "New here?" : "Have an account?"}
                 </span>
-                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest underline decoration-2 underline-offset-4">
-                  {location.pathname === '/login' ? "Register" : "Login"}
+                <span className="text-sm font-bold text-emerald-600 underline decoration-2 underline-offset-4">
+                  {location.pathname === '/login' ? "Sign up" : "Sign in"}
                 </span>
               </Link>
             )}

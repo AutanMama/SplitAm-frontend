@@ -14,12 +14,11 @@ const ExpenseList = ({ expenses }) => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header with count */}
-      <div className="flex justify-between items-center px-4">
-        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Transaction History</h3>
-        <span className="text-[9px] font-black bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">
-          {expenses.length} Total
+    <div className="space-y-5">
+      <div className="flex justify-between items-center px-2 md:px-4">
+        <h3 className="text-sm font-bold text-slate-600">Recent activity</h3>
+        <span className="text-xs font-bold bg-slate-100 text-slate-500 px-2.5 py-1 rounded-full">
+          {expenses.length} {expenses.length === 1 ? 'item' : 'items'}
         </span>
       </div>
 
@@ -48,32 +47,31 @@ const ExpenseList = ({ expenses }) => {
                   )}
                 </div>
 
-                <div>
-                  <p className="font-bold text-slate-800 text-sm leading-tight mb-1">
+                <div className="min-w-0">
+                  <p className="font-bold text-slate-800 text-sm leading-tight mb-1 truncate">
                     {exp.description}
                   </p>
-                  <div className="flex items-center gap-2">
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
-                      {isSettlement ? 'Payment' : `Paid by ${payerName}`}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-xs text-slate-500">
+                      {isSettlement ? 'Direct payment' : `Paid by ${payerName}`}
                     </p>
                     <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
+                    <p className="text-xs text-slate-400">
                       {formatDate(exp.createdAt)}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Amount Styling */}
-              <div className="text-right">
+              <div className="text-right shrink-0">
                 <p className={`text-sm font-black tracking-tight ${
                   isSettlement ? 'text-amber-600' : 'text-emerald-700'
                 }`}>
                   ₦{exp.amount.toLocaleString()}
                 </p>
                 {isSettlement && (
-                  <span className="text-[8px] font-black text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded-md uppercase tracking-widest">
-                    Settle
+                  <span className="text-xs font-bold text-amber-500 bg-amber-50 px-2 py-0.5 rounded-md mt-1 inline-block">
+                    Payment
                   </span>
                 )}
               </div>
@@ -82,11 +80,12 @@ const ExpenseList = ({ expenses }) => {
         })}
 
         {expenses.length === 0 && (
-          <div className="py-16 text-center bg-slate-50/50 rounded-[2rem] border-2 border-dashed border-slate-100">
-            <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="py-12 md:py-16 text-center bg-slate-50/50 rounded-[2rem] border-2 border-dashed border-slate-100 px-6">
+            <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
               <svg className="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             </div>
-            <p className="text-xs text-slate-400 font-black uppercase tracking-widest">No transactions yet</p>
+            <p className="text-sm font-bold text-slate-600">No expenses yet</p>
+            <p className="text-xs text-slate-400 mt-1">Add your first expense above to get started.</p>
           </div>
         )}
       </div>

@@ -1,116 +1,118 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { toast } from '../services/toast';
 
-// Components
-import ExpenseForm from '../components/ExpenseForm';
-import ExpenseList from '../components/ExpenseList';
-import BalanceSummary from '../components/BalanceSummary';
-import AjoManager from '../components/AjoManager'; // Swapped from AjoTracker
+import AjoManager from '../components/AjoManager';
 import AddMemberModal from '../components/AddMemberModal';
-import SettleUpModal from '../components/SettleUpModal';
 
-/**
- * GroupDetails Page - Final Version
- * Includes: Premium Toasts, Skeleton State, and Privacy Approvals.
- */
 const GroupDetails = () => {
   const { groupId } = useParams();
   const navigate = useNavigate();
-  
-  // --- State Management ---
+
   const [group, setGroup] = useState(null);
-  const [expenses, setExpenses] = useState([]);
-  const [isStartingAjo, setIsStartingAjo] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSettleModalOpen, setIsSettleModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  
-  // NEW: Premium Toast State
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [isStartingAjo, setIsStartingAjo] = useState(false);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showAjoModal, setShowAjoModal] = useState(false);
+
+  const [ajoForm, setAjoForm] = useState({ title: '', amount: '', totalRounds: '', frequency: 'monthly' });
 
   const user = JSON.parse(localStorage.getItem('user'));
 
-  // Helper to trigger the beautiful notification
-  const showToast = (message, type = 'success') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => setToast({ ...toast, show: false }), 4000);
-  };
-
-  // --- Data Fetching ---
   const fetchData = async () => {
     try {
-      // Fetching group details which now includes ajoRounds
       const gRes = await api.get('/groups');
-      const currentGroup = gRes.data.find(g => g._id === groupId);
+      const currentGroup = gRes.data.find((g) => g._id === groupId);
+
+      if (!currentGroup) {
+        setGroup(null);
+        return;
+      }
+
+      try {
+        const aRes = await api.get(`/ajo/${groupId}`);
+        currentGroup.activeAjo = aRes.data;
+      } catch (e) {
+        currentGroup.activeAjo = null;
+      }
+
       setGroup(currentGroup);
-
-      // Fetching expenses for the ledger
-      const eRes = await api.get(`/expenses/${groupId}`);
-      setExpenses(eRes.data);
-
     } catch (err) {
-      showToast("Failed to load group data", "error");
+      toast.error("Couldn't load this group. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { 
-    fetchData(); 
+  useEffect(() => {
+    fetchData();
   }, [groupId]);
 
-  // --- Member & Group Management Logic ---
   const handleRemoveMember = async (memberUserId) => {
-    if (memberUserId === user.id) return showToast("You cannot remove yourself!", "error");
-    
-    if (!window.confirm("Are you sure you want to remove this member?")) return;
+    if (memberUserId === user.id) return toast.error("You can't remove yourself.");
+    if (!window.confirm('Remove this person from the group?')) return;
 
     try {
       await api.delete(`/groups/${groupId}/members/${memberUserId}`);
-      showToast("Member removed successfully");
-      fetchData(); 
+      toast.success('Member removed');
+      fetchData();
     } catch (err) {
-      showToast(err.response?.data?.error || "Failed to remove member", "error");
+      toast.error(err.response?.data?.error || "Couldn't remove that member");
     }
   };
 
   const handleLeaveGroup = async () => {
-    if(window.confirm("Are you sure you want to leave this group?")) {
+    if (window.confirm("Leave this group? You'll lose access to its ajo.")) {
       try {
         await api.delete(`/groups/${groupId}/members/${user.id}`);
-        navigate('/dashboard');
+        toast.success('You left the group');
+        navigate('/');
       } catch (err) {
-        showToast("Error leaving group", "error");
+        toast.error(err.response?.data?.error || "Couldn't leave the group");
       }
     }
   };
 
   const handleDeleteGroup = async () => {
-    if(window.confirm("FATAL: Delete this entire group? This cannot be undone.")) {
+    if (window.confirm("Delete this group? The ajo and all its history will be gone forever. This can't be undone.")) {
       try {
         await api.delete(`/groups/${groupId}`);
-        navigate('/dashboard');
+        toast.success('Group deleted');
+        navigate('/');
       } catch (err) {
-        showToast("Error deleting group", "error");
+        toast.error(err.response?.data?.error || "Couldn't delete the group");
       }
     }
   };
 
   const handleStartAjo = async () => {
-    const amount = prompt("Enter contribution amount (e.g. 50000):");
-    if (!amount) return;
+    if (!ajoForm.title.trim()) return toast.error('Give your ajo a name');
+    if (!ajoForm.amount || Number(ajoForm.amount) <= 0) {
+      return toast.error('Enter the amount per hand');
+    }
+    const rounds = Number(ajoForm.totalRounds);
+    if (!Number.isInteger(rounds) || rounds < 1) {
+      return toast.error('Enter how many rounds total (1 hand = 1 round)');
+    }
 
     setIsStartingAjo(true);
     try {
-      // This creates the initial ajoRounds structure in the backend
-      await api.post(`/groups/${groupId}/ajo/start`, {
-        contributionAmount: Number(amount)
+      await api.post('/ajo', {
+        groupId,
+        title: ajoForm.title.trim(),
+        contributionAmount: Number(ajoForm.amount),
+        totalRounds: rounds,
+        frequency: ajoForm.frequency,
       });
-      showToast("Ajo Cycle Started!");
+
+      toast.success('Ajo set up! Members can now request hands.');
+      setShowAjoModal(false);
+      setAjoForm({ title: '', amount: '', totalRounds: '', frequency: 'monthly' });
       fetchData();
     } catch (err) {
-      showToast("Failed to start Ajo cycle", "error");
+      toast.error(err.response?.data?.error || "Couldn't start the ajo");
     } finally {
       setIsStartingAjo(false);
     }
@@ -120,92 +122,87 @@ const GroupDetails = () => {
     return (
       <div className="flex flex-col items-center justify-center py-20 min-h-[50vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-emerald-600"></div>
-        <p className="mt-4 text-slate-400 font-bold animate-pulse">Syncing Finances...</p>
+        <p className="mt-4 text-slate-500 font-medium">Loading your group…</p>
       </div>
     );
   }
 
-  if (!group) return <div className="p-10 text-center text-rose-500 font-bold">Group not found.</div>;
+  if (!group) {
+    return <div className="p-10 text-center text-rose-500 font-bold">We couldn't find this group.</div>;
+  }
 
   const isAdmin = group.owner === user.id || group.owner?._id === user.id;
+  const memberCount = group.members.length;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 p-4 md:p-8 relative">
-      
-      {/* --- PREMIUM TOAST NOTIFICATION --- */}
-      {toast.show && (
-        <div className={`fixed top-10 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-2xl shadow-2xl border flex items-center gap-3 animate-in slide-in-from-top-10 duration-300 ${
-          toast.type === 'error' ? 'bg-rose-50 border-rose-100 text-rose-600' : 'bg-emerald-900 border-emerald-800 text-emerald-50'
-        }`}>
-          <div className={`w-2 h-2 rounded-full ${toast.type === 'error' ? 'bg-rose-500' : 'bg-emerald-400'} animate-pulse`} />
-          <span className="font-black text-[10px] uppercase tracking-[0.2em]">{toast.message}</span>
-        </div>
-      )}
+    <div className="max-w-4xl mx-auto space-y-6 md:space-y-8 p-4 md:p-8 relative">
 
-      {/* 1. Header Section */}
-      <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-emerald-50 relative overflow-hidden">
+      {/* Header */}
+      <div className="bg-white p-6 md:p-8 rounded-[2rem] shadow-sm border border-emerald-50 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-50 rounded-bl-full -mr-16 -mt-16 opacity-40"></div>
-        
+
         <div className="flex flex-col md:flex-row justify-between items-start gap-6 relative z-10">
-          <div className="flex-grow">
+          <div className="flex-grow min-w-0">
             <div className="flex items-center gap-3 mb-2 flex-wrap">
-              <h1 className="text-3xl md:text-4xl font-black text-emerald-900 tracking-tight leading-none">
+              <h1 className="text-2xl md:text-4xl font-black text-emerald-900 tracking-tight leading-none">
                 {group.name}
               </h1>
-              <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
-                {group.members.length} Members
+              <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold">
+                {memberCount} {memberCount === 1 ? 'member' : 'members'}
               </span>
             </div>
-            <p className="text-slate-500 max-w-xl text-sm leading-relaxed">
-              {group.description || "Share expenses and save together."}
-            </p>
+            {group.description && (
+              <p className="text-slate-500 max-w-xl text-sm leading-relaxed">{group.description}</p>
+            )}
           </div>
 
-          <div className="flex flex-col items-end gap-4 min-w-[150px]">
-            <div className="text-right">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Invite Code</p>
-              <div className="bg-slate-900 text-white px-5 py-2 rounded-2xl text-sm font-mono font-black shadow-xl">
+          <div className="flex flex-col items-stretch md:items-end gap-3 w-full md:w-auto md:min-w-[160px]">
+            <div className="text-left md:text-right">
+              <p className="text-xs font-bold text-slate-500 mb-1">Invite code</p>
+              <div className="bg-slate-900 text-white px-4 py-2 rounded-2xl text-sm font-mono font-black shadow-xl inline-block">
                 {group.inviteCode}
               </div>
             </div>
-            
+
             {isAdmin && (
-              <button 
+              <button
                 onClick={() => setIsModalOpen(true)}
-                className="flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-bold text-xs bg-emerald-50 px-4 py-2 rounded-xl transition-all"
+                className="flex items-center justify-center gap-2 text-emerald-700 hover:text-emerald-800 font-bold text-sm bg-emerald-50 px-4 py-2 rounded-xl transition-all"
               >
-                <span className="text-lg">+</span> Invite Members
+                <span className="text-lg leading-none">+</span> Add people
               </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* 2. PENDING REQUESTS SECTION */}
+      {/* Pending requests */}
       {isAdmin && group.joinRequests && group.joinRequests.length > 0 && (
-        <div className="bg-amber-50 border border-amber-100 p-6 rounded-[2rem] mb-6 animate-in slide-in-from-top-4 duration-300">
-          <h3 className="text-amber-800 font-black text-xs uppercase tracking-widest mb-4 flex items-center gap-2">
+        <div className="bg-amber-50 border border-amber-100 p-5 md:p-6 rounded-[2rem]">
+          <h3 className="text-amber-800 font-bold text-sm mb-4 flex items-center gap-2">
             <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
-            Pending Join Requests
+            People waiting to join
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {group.joinRequests.map((request) => (
-              <div key={request._id} className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-amber-100">
-                <div className="overflow-hidden">
-                  <p className="font-bold text-slate-800 text-sm truncate">{request.name || "New User"}</p>
-                  <p className="text-[10px] text-slate-400 font-medium truncate">{request.email}</p>
+              <div key={request._id} className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-amber-100 gap-2">
+                <div className="overflow-hidden min-w-0">
+                  <p className="font-bold text-slate-800 text-sm truncate">{request.name || 'New person'}</p>
+                  <p className="text-xs text-slate-500 truncate">{request.email}</p>
                 </div>
-                <button 
+                <button
                   onClick={async () => {
                     try {
                       await api.post('/groups/approve-request', { groupId: group._id, userId: request._id });
-                      showToast(`${request.name} approved!`);
-                      fetchData(); 
-                    } catch(err) { showToast("Approval failed", "error"); }
+                      toast.success(`${request.name || 'They'} can now access the group`);
+                      fetchData();
+                    } catch (err) {
+                      toast.error(err.response?.data?.error || "Couldn't approve. Try again.");
+                    }
                   }}
-                  className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-black hover:bg-emerald-700 transition-all shadow-md shrink-0 ml-2"
+                  className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-emerald-700 transition-all shadow-md shrink-0"
                 >
-                  APPROVE
+                  Let in
                 </button>
               </div>
             ))}
@@ -213,101 +210,228 @@ const GroupDetails = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* 3. Expenses Column */}
-        <div className="lg:col-span-2 space-y-8">
-          <div className="bg-white p-2 rounded-[2rem] shadow-sm border border-slate-100">
-            <ExpenseForm groupId={groupId} onExpenseAdded={() => { fetchData(); showToast("Expense Added!"); }} />
+      {/* Ajo — the main event */}
+      {group.activeAjo ? (
+        <AjoManager
+          group={group}
+          isAdmin={isAdmin}
+          onUpdate={fetchData}
+          currentUserId={user.id}
+        />
+      ) : (
+        <div className="bg-white p-8 md:p-10 rounded-[2rem] md:rounded-[3rem] border-2 border-dashed border-emerald-200 text-center flex flex-col items-center shadow-sm">
+          <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mb-4">
+            <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
           </div>
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold text-slate-800 px-4">Transaction History</h2>
-            <ExpenseList expenses={expenses} />
-          </div>
-        </div>
-
-        {/* 4. Sidebar: Balances & Ajo Manager */}
-        <div className="space-y-6">
-          <div className="space-y-6">
-            <BalanceSummary 
-              expenses={expenses} 
-              members={group.members} 
-              currentUserId={user.id} 
-              isAdmin={isAdmin}
-              onRemoveMember={handleRemoveMember}
-              loading={loading}
-            />
-            
-            <button 
-              onClick={() => setIsSettleModalOpen(true)}
-              className="w-full bg-slate-900 text-white py-4 rounded-[2rem] font-black text-sm shadow-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-3"
+          <h2 className="text-xl md:text-2xl font-black text-slate-900 mb-2">Start an ajo</h2>
+          <p className="text-slate-500 text-sm max-w-md mb-6 leading-relaxed">
+            You set the amount per hand and the total rounds. Members request hands — admin approves and orders the rotation. Each round, one slot collects the whole pot.
+          </p>
+          {isAdmin ? (
+            <button
+              onClick={() => setShowAjoModal(true)}
+              className="bg-emerald-600 text-white px-8 py-4 rounded-2xl font-bold text-sm hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-100 active:scale-[0.98]"
             >
-              Settle Up Balances
+              Start ajo
             </button>
-          </div>
-          
-          {/* Ajo Section - Dynamically switched to AjoManager */}
-          <div className="relative">
-            {group.ajoRounds && group.ajoRounds.length > 0 ? (
-              <AjoManager 
-                group={group} 
-                isAdmin={isAdmin} 
-                showToast={showToast} 
-                onUpdate={(updatedGroup) => setGroup(updatedGroup)}
-              />
-            ) : (
-              <div className="bg-white p-8 rounded-[2rem] border-2 border-dashed border-emerald-100 text-center flex flex-col items-center">
-                <p className="text-emerald-900 font-black mb-1 text-sm uppercase">Ajo Contribution</p>
-                <p className="text-slate-400 text-[11px] mb-6 italic text-center">No active cycle found.</p>
-                {isAdmin ? (
-                   <button onClick={handleStartAjo} disabled={isStartingAjo} className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold text-sm hover:bg-emerald-700 transition-all">
-                    {isStartingAjo ? 'Starting...' : 'Start Ajo Now'}
-                   </button>
-                ) : (
-                  <div className="bg-slate-50 py-2 px-6 rounded-full text-[10px] font-black text-slate-400 uppercase">Waiting for Admin</div>
+          ) : (
+            <div className="bg-slate-50 py-2 px-5 rounded-full text-xs font-bold text-slate-500">
+              Only the admin can start one
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Members list */}
+      <div className="bg-white p-6 md:p-8 rounded-[2rem] shadow-sm border border-slate-100">
+        <h3 className="text-base md:text-lg font-bold text-slate-800 mb-5">Members</h3>
+        <div className="space-y-3">
+          {group.members.map((m) => {
+            const memberId = m.user?._id || m.user;
+            const memberName = m.user?.name || 'Member';
+            const memberEmail = m.user?.email || '';
+            const isMe = memberId === user.id;
+            const memberIsAdmin = m.role === 'ADMIN';
+
+            return (
+              <div key={memberId} className="flex items-center justify-between gap-3 group">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-sm font-black shrink-0 ${
+                    isMe ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500'
+                  }`}>
+                    {memberName.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-slate-800 truncate">
+                      {memberName}
+                      {isMe && <span className="text-emerald-600 ml-1.5 font-bold">(you)</span>}
+                    </p>
+                    <p className="text-xs text-slate-400 truncate">
+                      {memberIsAdmin ? 'Admin · ' : ''}{memberEmail}
+                    </p>
+                  </div>
+                </div>
+
+                {isAdmin && !isMe && (
+                  <button
+                    onClick={() => handleRemoveMember(memberId)}
+                    className="opacity-100 md:opacity-0 group-hover:opacity-100 p-2 bg-rose-50 text-rose-500 rounded-xl hover:bg-rose-500 hover:text-white transition-all"
+                    title="Remove from group"
+                    aria-label={`Remove ${memberName}`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
                 )}
               </div>
-            )}
-          </div>
+            );
+          })}
         </div>
       </div>
-      
-      {/* 5. Danger Zone */}
-      <div className="mt-12 pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6">
+
+      {/* Risky actions */}
+      <div className="pt-4 md:pt-6 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 md:gap-6">
         <div className="text-center md:text-left">
-          <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">Danger Zone</h4>
-          <p className="text-xs text-slate-400 font-medium">Be careful, these actions are permanent.</p>
+          <h4 className="text-base font-bold text-slate-900">Risky actions</h4>
+          <p className="text-sm text-slate-500">These can't be undone. Be sure before you tap.</p>
         </div>
-        <div className="flex gap-4">
+        <div className="flex gap-3">
           {!isAdmin && (
-            <button onClick={handleLeaveGroup} className="px-8 py-3 rounded-2xl border border-rose-100 text-rose-500 text-xs font-black hover:bg-rose-50 transition-all">
-              Leave Group
+            <button onClick={handleLeaveGroup} className="px-6 md:px-8 py-3 rounded-2xl border border-rose-100 text-rose-500 text-sm font-bold hover:bg-rose-50 transition-all">
+              Leave group
             </button>
           )}
           {isAdmin && (
-            <button onClick={handleDeleteGroup} className="px-8 py-3 rounded-2xl bg-rose-500 text-white text-xs font-black shadow-lg shadow-rose-100 hover:bg-rose-600 transition-all">
-              Delete Group
+            <button onClick={handleDeleteGroup} className="px-6 md:px-8 py-3 rounded-2xl bg-rose-500 text-white text-sm font-bold shadow-lg shadow-rose-100 hover:bg-rose-600 transition-all">
+              Delete group
             </button>
           )}
         </div>
       </div>
 
-      {/* --- Overlays --- */}
-      <AddMemberModal 
+      {/* Start ajo modal */}
+      {showAjoModal && (
+        <div className="fixed inset-0 z-[210] flex items-end md:items-center justify-center p-0 md:p-4 bg-slate-900/80 backdrop-blur-sm">
+          <div className="bg-white rounded-t-[2.5rem] md:rounded-[2.5rem] p-6 md:p-8 max-w-md w-full shadow-2xl animate-in slide-in-from-bottom-10 md:zoom-in-95 duration-200 max-h-[85dvh] overflow-y-auto pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+            <div className="md:hidden w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-4" aria-hidden="true" />
+            <h3 className="text-xl md:text-2xl font-black text-slate-900 mb-1">Set up an ajo</h3>
+            <p className="text-slate-500 text-sm mb-5">
+              You set the amount per hand and the total rounds. Members then request how many hands they want.
+            </p>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-600 ml-1">Name this ajo</label>
+                <input
+                  type="text"
+                  placeholder="e.g. January savings"
+                  maxLength={60}
+                  className="w-full p-4 bg-slate-50 rounded-2xl font-medium outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                  value={ajoForm.title}
+                  onChange={(e) => setAjoForm({ ...ajoForm, title: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-600 ml-1">
+                  Amount per hand
+                </label>
+                <div className="relative">
+                  <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-black">₦</span>
+                  <input
+                    type="number"
+                    min="0"
+                    inputMode="decimal"
+                    placeholder="50000"
+                    className="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                    value={ajoForm.amount}
+                    onChange={(e) => setAjoForm({ ...ajoForm, amount: e.target.value })}
+                  />
+                </div>
+                <p className="text-xs text-slate-400 ml-1 mt-1">
+                  Each hand pays this every round. A 2-hand member pays double.
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-600 ml-1">
+                  Total rounds
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="100"
+                  inputMode="numeric"
+                  placeholder="10"
+                  className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                  value={ajoForm.totalRounds}
+                  onChange={(e) => setAjoForm({ ...ajoForm, totalRounds: e.target.value })}
+                />
+                <p className="text-xs text-slate-400 ml-1 mt-1">
+                  1 round = 1 hand collects. If 5 people each have 2 hands, that's 10 rounds.
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-600 ml-1">How often?</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {['daily', 'weekly', 'monthly'].map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      onClick={() => setAjoForm({ ...ajoForm, frequency: f })}
+                      className={`py-3 rounded-xl text-sm font-bold capitalize transition-all ${
+                        ajoForm.frequency === f
+                          ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-100'
+                          : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {ajoForm.amount && ajoForm.totalRounds && Number(ajoForm.amount) > 0 && Number(ajoForm.totalRounds) > 0 && (
+                <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 mt-2">
+                  <p className="text-xs font-bold text-emerald-700 mb-1">Each round's pot</p>
+                  <p className="text-lg font-black text-emerald-900">
+                    ₦{(Number(ajoForm.amount) * Number(ajoForm.totalRounds)).toLocaleString()}
+                  </p>
+                  <p className="text-xs text-emerald-700 mt-1">
+                    {Number(ajoForm.totalRounds)} round{Number(ajoForm.totalRounds) === 1 ? '' : 's'} × ₦{Number(ajoForm.amount).toLocaleString()} per hand
+                  </p>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setShowAjoModal(false)}
+                  className="flex-1 py-4 rounded-2xl font-bold text-sm text-slate-500 hover:bg-slate-50 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleStartAjo}
+                  className="flex-[2] bg-emerald-600 py-4 rounded-2xl font-bold text-sm text-white shadow-xl shadow-emerald-100 hover:bg-emerald-700 transition-all disabled:opacity-60"
+                  disabled={isStartingAjo}
+                >
+                  {isStartingAjo ? 'Setting up…' : 'Set up ajo'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <AddMemberModal
         groupId={groupId}
         inviteCode={group.inviteCode}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onMemberAdded={() => { fetchData(); showToast("Member Added!"); }}
-      />
-
-      <SettleUpModal 
-        isOpen={isSettleModalOpen}
-        onClose={() => setIsSettleModalOpen(false)}
-        members={group.members}
-        expenses={expenses}
-        currentUserId={user.id}
-        groupId={groupId}
-        onSettled={() => { fetchData(); showToast("Balances Settled!"); }}
+        onMemberAdded={() => { fetchData(); toast.success('Member added'); }}
       />
     </div>
   );

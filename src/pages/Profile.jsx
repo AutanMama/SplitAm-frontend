@@ -1,47 +1,81 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import api from '../services/api';
+import { toast } from '../services/toast';
 
 const Profile = () => {
-  const [user] = useState(JSON.parse(localStorage.getItem('user')));
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const stored = localStorage.getItem('user');
+  const [user, setUser] = useState(stored ? JSON.parse(stored) : null);
+  const [loggingOut, setLoggingOut] = useState(false);
 
-  const showToast = (message, type = 'success') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => setToast({ ...toast, show: false }), 4000);
-  };
+  const [phoneInput, setPhoneInput] = useState('');
+  const [editingPhone, setEditingPhone] = useState(false);
+  const [savingPhone, setSavingPhone] = useState(false);
 
-  const handleLogout = () => {
-    localStorage.clear();
-    // Use window.location for a hard reset of the app state
+  // Refresh from server on mount so phone is up-to-date even if localStorage is stale
+  useEffect(() => {
+    api.get('/auth/me')
+      .then(({ data }) => {
+        if (data?.user) {
+          setUser(data.user);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          setPhoneInput(data.user.phone || '');
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await api.post('/auth/logout');
+    } catch (err) {
+      // Even if the server call fails, we still log out locally.
+    }
+    localStorage.removeItem('user');
     window.location.href = '/login';
   };
 
-  const handleDeleteAccount = () => {
-    if (window.confirm("Are you absolutely sure? This will permanently delete your financial history and remove you from all Ajo cycles.")) {
-      showToast("Request sent to admin", "error");
-      // Logic for account deletion would go here
+  const handleSavePhone = async () => {
+    setSavingPhone(true);
+    try {
+      const { data } = await api.post('/auth/phone', { phone: phoneInput.trim() || '' });
+      setUser(data.user);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      setEditingPhone(false);
+      toast.success(phoneInput.trim() ? 'Phone saved' : 'Phone removed');
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Couldn't save phone");
+    } finally {
+      setSavingPhone(false);
     }
   };
 
-  return (
-    <div className="max-w-2xl mx-auto py-12 px-4 relative animate-in fade-in slide-in-from-bottom-4 duration-700">
-      
-      {/* Toast Notification */}
-      {toast.show && (
-        <div className={`fixed top-10 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-2xl shadow-2xl border flex items-center gap-3 animate-in slide-in-from-top-10 duration-300 ${
-          toast.type === 'error' ? 'bg-rose-50 border-rose-100 text-rose-600' : 'bg-emerald-900 border-emerald-800 text-emerald-50'
-        }`}>
-          <div className={`w-2 h-2 rounded-full ${toast.type === 'error' ? 'bg-rose-500' : 'bg-emerald-400'} animate-pulse`} />
-          <span className="font-black text-[10px] uppercase tracking-widest">{toast.message}</span>
-        </div>
-      )}
+  if (!user) {
+    return (
+      <div className="max-w-2xl mx-auto py-12 px-4 text-center">
+        <p className="text-slate-500 font-bold">You're not signed in.</p>
+      </div>
+    );
+  }
 
-      <div className="bg-white rounded-[3rem] p-10 shadow-2xl shadow-slate-200/50 border border-slate-50 relative overflow-hidden text-center">
-        {/* Decorative Background Glow */}
+  const formatPhoneForDisplay = (phone) => {
+    if (!phone) return '';
+    // 2348012345678 → 0801 234 5678
+    if (phone.startsWith('234') && phone.length === 13) {
+      const local = '0' + phone.slice(3);
+      return `${local.slice(0, 4)} ${local.slice(4, 7)} ${local.slice(7)}`;
+    }
+    return phone;
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto py-8 md:py-12 px-4 relative animate-in fade-in slide-in-from-bottom-4 duration-700">
+
+      <div className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 shadow-2xl shadow-slate-200/50 border border-slate-50 relative overflow-hidden text-center">
         <div className="absolute -top-20 -left-20 w-64 h-64 bg-emerald-50 rounded-full blur-3xl opacity-60"></div>
-        
-        {/* Profile Avatar Section */}
-        <div className="relative inline-block mb-8">
-          <div className="w-32 h-32 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-[2.5rem] flex items-center justify-center text-4xl font-black text-white shadow-2xl shadow-emerald-200 transform -rotate-3 hover:rotate-0 transition-transform duration-500">
+
+        <div className="relative inline-block mb-6">
+          <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-[2rem] flex items-center justify-center text-3xl md:text-4xl font-black text-white shadow-2xl shadow-emerald-200 transform -rotate-3 hover:rotate-0 transition-transform duration-500">
             {user.name.charAt(0).toUpperCase()}
           </div>
           <div className="absolute -bottom-2 -right-2 bg-white p-2 rounded-2xl shadow-lg border border-slate-100">
@@ -49,47 +83,80 @@ const Profile = () => {
           </div>
         </div>
 
-        <div className="mb-10">
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">{user.name}</h1>
-          <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.3em] mt-2">{user.email}</p>
+        <div className="mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{user.name}</h1>
+          <p className="text-slate-500 font-medium text-sm mt-2 break-all">{user.email}</p>
         </div>
 
-        {/* Info Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-          <div className="bg-slate-50/50 p-6 rounded-[2rem] border border-slate-100/50 text-left group hover:bg-white hover:shadow-xl hover:shadow-slate-100 transition-all duration-300">
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Account Type</p>
-            <p className="text-sm font-black text-slate-800 flex items-center gap-2">
-              Premium Member
-              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span>
-            </p>
+        {/* Phone row */}
+        <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-100/50 text-left mb-4 relative z-10">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Phone (for ajo reminders)</p>
+          {editingPhone ? (
+            <div className="space-y-2">
+              <input
+                type="tel"
+                inputMode="tel"
+                placeholder="0801 234 5678"
+                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition-all font-medium text-slate-700"
+                value={phoneInput}
+                onChange={(e) => setPhoneInput(e.target.value)}
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setEditingPhone(false); setPhoneInput(user.phone || ''); }}
+                  className="flex-1 py-2.5 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-100 transition-all"
+                  disabled={savingPhone}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSavePhone}
+                  disabled={savingPhone}
+                  className="flex-[2] bg-emerald-600 text-white py-2.5 rounded-xl font-bold text-sm hover:bg-emerald-700 transition-all disabled:opacity-60"
+                >
+                  {savingPhone ? 'Saving…' : 'Save phone'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-3">
+              {user.phone ? (
+                <p className="text-sm font-bold text-slate-800">{formatPhoneForDisplay(user.phone)}</p>
+              ) : (
+                <p className="text-sm text-slate-400 italic">Not set — add one to get WhatsApp reminders</p>
+              )}
+              <button
+                onClick={() => { setEditingPhone(true); setPhoneInput(user.phone || ''); }}
+                className="text-emerald-700 font-bold text-sm bg-emerald-50 px-3 py-1.5 rounded-lg hover:bg-emerald-100 transition-all shrink-0"
+              >
+                {user.phone ? 'Change' : 'Add'}
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mb-8 md:mb-10">
+          <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-100/50 text-left">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Account</p>
+            <p className="text-sm font-bold text-slate-800">Free</p>
           </div>
-          <div className="bg-slate-50/50 p-6 rounded-[2rem] border border-slate-100/50 text-left group hover:bg-white hover:shadow-xl hover:shadow-slate-100 transition-all duration-300">
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Primary Currency</p>
-            <p className="text-sm font-black text-slate-800 uppercase tracking-tighter">Naira (₦) — NGN</p>
+          <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-100/50 text-left">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Currency</p>
+            <p className="text-sm font-bold text-slate-800">Naira (₦)</p>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="space-y-4">
-          <button 
+        <div className="space-y-3">
+          <button
             onClick={handleLogout}
-            className="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-slate-200 hover:bg-emerald-600 transition-all active:scale-[0.98]"
+            disabled={loggingOut}
+            className="w-full py-4 md:py-5 bg-slate-900 text-white rounded-2xl font-bold text-sm shadow-xl shadow-slate-200 hover:bg-emerald-600 transition-all active:scale-[0.98] disabled:opacity-60"
           >
-            Logout of SplitAm
-          </button>
-          
-          <button 
-            onClick={handleDeleteAccount}
-            className="w-full py-4 text-rose-400 text-[10px] font-black uppercase tracking-widest hover:text-rose-600 transition-colors"
-          >
-            Delete Account Permanently
+            {loggingOut ? 'Signing out…' : 'Sign Out'}
           </button>
         </div>
       </div>
-
-      <p className="mt-12 text-center text-[9px] text-slate-300 font-bold uppercase tracking-[0.3em]">
-        SplitAm v3.0.4 • Secure Encryption Active
-      </p>
     </div>
   );
 };

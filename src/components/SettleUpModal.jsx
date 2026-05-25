@@ -6,17 +6,16 @@ const SettleUpModal = ({ isOpen, onClose, members, expenses, currentUserId, grou
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Memoize debt calculation so it doesn't re-run on every keystroke
   const myDebts = useMemo(() => {
     const debts = {};
-    expenses.forEach(exp => {
+    expenses.forEach((exp) => {
       const payerId = exp.paidBy?._id || exp.paidBy;
-      const mySplit = exp.splits?.find(s => (s.user?._id || s.user) === currentUserId);
-      
+      const mySplit = exp.splits?.find((s) => (s.user?._id || s.user) === currentUserId);
+
       if (payerId !== currentUserId && mySplit) {
         debts[payerId] = (debts[payerId] || 0) + mySplit.amount;
       } else if (payerId === currentUserId) {
-        exp.splits?.forEach(s => {
+        exp.splits?.forEach((s) => {
           const otherId = s.user?._id || s.user;
           if (otherId !== currentUserId) {
             debts[otherId] = (debts[otherId] || 0) - s.amount;
@@ -32,64 +31,63 @@ const SettleUpModal = ({ isOpen, onClose, members, expenses, currentUserId, grou
   const handleSettle = async (e) => {
     e.preventDefault();
     if (!selectedRecipient || !amount || Number(amount) <= 0) {
-      return showToast("Please enter a valid recipient and amount", "error");
+      return showToast('Pick a person and enter an amount.', 'error');
     }
-    
+
     setLoading(true);
     try {
-      const recipientName = members.find(m => (m.user?._id || m.user) === selectedRecipient)?.user?.name || "Member";
-      
+      const recipientName =
+        members.find((m) => (m.user?._id || m.user) === selectedRecipient)?.user?.name || 'them';
+
       await api.post('/expenses', {
         groupId,
-        description: `Settle Up: Paid ${recipientName}`,
+        description: `Paid ${recipientName}`,
         amount: Number(amount),
         paidBy: currentUserId,
-        splitType: 'SETTLEMENT', // Using a specific type helps the backend/UI distinguish this
-        recipientId: selectedRecipient 
+        splitType: 'SETTLEMENT',
+        recipientId: selectedRecipient,
       });
 
-      showToast(`Settled ₦${Number(amount).toLocaleString()} with ${recipientName}`);
+      showToast(`Recorded ₦${Number(amount).toLocaleString()} paid to ${recipientName}`);
       onSettled();
       onClose();
       setAmount('');
       setSelectedRecipient('');
     } catch (err) {
-      showToast(err.response?.data?.error || "Failed to record settlement", "error");
+      showToast(err.response?.data?.error || "Couldn't record that payment", 'error');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[120] p-4 animate-in fade-in duration-300">
-      <div className="bg-white w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl border border-slate-100 relative overflow-hidden animate-in zoom-in-95 duration-300">
-        
-        {/* Header */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Settle Up</h2>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Clear your balances</p>
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-end md:items-center justify-center z-[210] p-0 md:p-4 animate-in fade-in duration-300">
+      <div className="bg-white w-full max-w-md rounded-t-[2.5rem] md:rounded-[2.5rem] p-6 md:p-8 shadow-2xl border border-slate-100 relative overflow-hidden animate-in slide-in-from-bottom-10 md:zoom-in-95 duration-300">
+
+        <div className="mb-6 md:mb-8">
+          <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">Pay someone back</h2>
+          <p className="text-sm text-slate-500 mt-1">Record cash or transfers you've already made outside the app.</p>
         </div>
 
-        <form onSubmit={handleSettle} className="space-y-6">
-          {/* Recipient Selection */}
+        <form onSubmit={handleSettle} className="space-y-5">
           <div className="space-y-2">
-            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Pay To</label>
+            <label className="block text-xs font-bold text-slate-600 ml-1">Who did you pay?</label>
             <div className="relative">
-              <select 
+              <select
                 className="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 appearance-none text-sm font-bold text-slate-700 transition-all"
                 value={selectedRecipient}
                 onChange={(e) => setSelectedRecipient(e.target.value)}
                 required
               >
-                <option value="">Choose a member</option>
+                <option value="">Choose a person</option>
                 {members
-                  .filter(m => (m.user?._id || m.user) !== currentUserId)
-                  .map(m => {
+                  .filter((m) => (m.user?._id || m.user) !== currentUserId)
+                  .map((m) => {
                     const id = m.user?._id || m.user;
                     const debt = myDebts[id] || 0;
                     return (
                       <option key={id} value={id}>
-                        {m.user?.name} {debt > 0 ? `(You owe: ₦${debt.toLocaleString()})` : '(No debt)'}
+                        {m.user?.name} {debt > 0 ? `— you owe ₦${debt.toLocaleString()}` : ''}
                       </option>
                     );
                   })}
@@ -100,58 +98,59 @@ const SettleUpModal = ({ isOpen, onClose, members, expenses, currentUserId, grou
             </div>
           </div>
 
-          {/* Amount Input */}
           <div className="space-y-2">
-            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Amount Paid</label>
+            <label className="block text-xs font-bold text-slate-600 ml-1">How much did you pay?</label>
             <div className="relative group">
               <span className="absolute left-5 top-1/2 -translate-y-1/2 text-emerald-600 font-black text-lg">₦</span>
-              <input 
+              <input
                 type="number"
+                min="0"
+                step="0.01"
                 placeholder="0.00"
                 className="w-full bg-slate-50 border border-slate-100 p-4 pl-12 rounded-2xl outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 font-black text-xl tracking-tight transition-all"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 required
               />
-              {/* Quick-fill Button if debt exists */}
               {selectedRecipient && myDebts[selectedRecipient] > 0 && (
-                <button 
+                <button
                   type="button"
                   onClick={() => setAmount(myDebts[selectedRecipient])}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 bg-emerald-50 text-emerald-600 text-[9px] font-black px-3 py-1.5 rounded-lg hover:bg-emerald-100 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-emerald-100 transition-colors"
                 >
-                  PAY ALL
+                  Pay all
                 </button>
               )}
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-4">
-            <button 
-              type="button" 
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
               onClick={onClose}
-              className="flex-1 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest text-slate-400 hover:bg-slate-50 transition-all active:scale-95"
+              className="flex-1 py-4 rounded-2xl font-bold text-sm text-slate-500 hover:bg-slate-50 transition-all active:scale-95"
             >
               Cancel
             </button>
-            <button 
+            <button
               type="submit"
               disabled={loading || !selectedRecipient || !amount}
-              className="flex-[2] bg-slate-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-emerald-600 transition-all active:scale-95 disabled:bg-slate-100 disabled:text-slate-300 disabled:shadow-none"
+              className="flex-[2] bg-slate-900 text-white py-4 rounded-2xl font-bold text-sm shadow-xl shadow-slate-200 hover:bg-emerald-600 transition-all active:scale-95 disabled:bg-slate-100 disabled:text-slate-300 disabled:shadow-none"
             >
               {loading ? (
                 <div className="flex items-center justify-center gap-2">
                   <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  Syncing...
+                  Saving…
                 </div>
-              ) : 'Confirm Payment'}
+              ) : (
+                'Confirm Payment'
+              )}
             </button>
           </div>
         </form>
 
-        <p className="mt-8 text-center text-[9px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
-          Recording a settlement creates a special transaction<br/>that offsets existing group balances.
+        <p className="mt-6 text-center text-xs text-slate-400 leading-relaxed">
+          This only records the payment. It doesn't actually move money.
         </p>
       </div>
     </div>
