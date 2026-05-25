@@ -29,8 +29,8 @@ const CreateGroup = () => {
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center p-4 relative">
-      <div className="max-w-md w-full bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] shadow-2xl shadow-emerald-900/5 border border-slate-50 relative overflow-hidden">
+    <div className="min-h-[80vh] flex items-center justify-center px-3 py-6 md:p-4 relative">
+      <div className="max-w-md w-full bg-white p-5 md:p-10 rounded-[2rem] md:rounded-[3rem] shadow-2xl shadow-emerald-900/5 border border-slate-50 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-bl-full -mr-10 -mt-10 opacity-60"></div>
 
         <div className="relative z-10">
@@ -46,7 +46,7 @@ const CreateGroup = () => {
                 type="text"
                 required
                 maxLength={60}
-                className="w-full px-5 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all font-medium text-slate-700 placeholder-slate-300"
+                className="w-full px-4 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all font-medium text-slate-700 placeholder-slate-300"
                 placeholder="e.g. Office Adashi"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -59,7 +59,7 @@ const CreateGroup = () => {
               </label>
               <textarea
                 maxLength={280}
-                className="w-full px-5 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all font-medium text-slate-700 placeholder-slate-300 resize-none"
+                className="w-full px-4 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all font-medium text-slate-700 placeholder-slate-300 resize-none"
                 placeholder="e.g. 10-month ajo for our office, ₦50k per hand"
                 rows="3"
                 value={description}

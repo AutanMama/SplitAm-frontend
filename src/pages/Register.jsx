@@ -25,9 +25,9 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-[90vh] flex flex-col items-center justify-center p-6 relative animate-in fade-in slide-in-from-bottom-4 duration-700">
-      
-      <div className="max-w-md w-full bg-white p-10 md:p-12 rounded-[3.5rem] shadow-2xl shadow-emerald-900/5 border border-slate-50 relative overflow-hidden">
+    <div className="min-h-[90vh] flex flex-col items-center justify-center px-3 py-6 md:p-6 relative animate-in fade-in slide-in-from-bottom-4 duration-700">
+
+      <div className="max-w-md w-full bg-white p-6 md:p-10 lg:p-12 rounded-[2rem] md:rounded-[3rem] shadow-2xl shadow-emerald-900/5 border border-slate-50 relative overflow-hidden">
         {/* Decorative elements */}
         <div className="absolute top-0 left-0 w-32 h-32 bg-emerald-50 rounded-br-full -ml-10 -mt-10 opacity-60"></div>
         <div className="absolute bottom-0 right-0 w-16 h-16 bg-slate-50 rounded-tl-full opacity-40"></div>
@@ -45,7 +45,7 @@ const Register = () => {
                 type="text"
                 placeholder="e.g. Chinedu Okafor"
                 maxLength={60}
-                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:bg-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-slate-700"
+                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:bg-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-slate-700"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
@@ -57,7 +57,7 @@ const Register = () => {
               <input
                 type="email"
                 placeholder="you@example.com"
-                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:bg-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-slate-700"
+                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:bg-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-slate-700"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
@@ -72,7 +72,7 @@ const Register = () => {
                 type="tel"
                 inputMode="tel"
                 placeholder="0801 234 5678"
-                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:bg-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-slate-700"
+                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:bg-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-slate-700"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               />
@@ -88,7 +88,7 @@ const Register = () => {
                 placeholder="••••••••"
                 minLength={8}
                 maxLength={128}
-                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:bg-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-slate-700"
+                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:bg-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-slate-700"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 required
@@ -111,8 +111,10 @@ const Register = () => {
 
           <footer className="mt-8 md:mt-10 text-center">
             <p className="text-slate-500 text-sm">
-              Already have an account?
-              <Link to="/login" className="text-emerald-600 ml-2 font-bold hover:underline">Sign in</Link>
+              Already have an account?{' '}
+              <Link to="/login" className="text-emerald-600 font-bold hover:underline whitespace-nowrap">
+                Sign in
+              </Link>
             </p>
           </footer>
         </div>

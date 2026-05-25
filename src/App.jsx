@@ -49,7 +49,7 @@ function App() {
         <Navbar />
         <Toaster />
         
-        <main className="container mx-auto px-4 pt-8 pb-24 md:pt-28 md:pb-12 max-w-6xl flex-grow">
+        <main className="container mx-auto px-0 md:px-4 pt-4 pb-24 md:pt-28 md:pb-12 max-w-6xl flex-grow">
           <Routes>
             {/* Public Routes */}
             <Route path="/login" element={<Login />} />

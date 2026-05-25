@@ -135,10 +135,10 @@ const GroupDetails = () => {
   const memberCount = group.members.length;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 md:space-y-8 p-4 md:p-8 relative">
+    <div className="max-w-4xl mx-auto space-y-5 md:space-y-8 px-3 py-4 md:p-8 relative">
 
       {/* Header */}
-      <div className="bg-white p-6 md:p-8 rounded-[2rem] shadow-sm border border-emerald-50 relative overflow-hidden">
+      <div className="bg-white p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-sm border border-emerald-50 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-50 rounded-bl-full -mr-16 -mt-16 opacity-40"></div>
 
         <div className="flex flex-col md:flex-row justify-between items-start gap-6 relative z-10">
@@ -178,7 +178,7 @@ const GroupDetails = () => {
 
       {/* Pending requests */}
       {isAdmin && group.joinRequests && group.joinRequests.length > 0 && (
-        <div className="bg-amber-50 border border-amber-100 p-5 md:p-6 rounded-[2rem]">
+        <div className="bg-amber-50 border border-amber-100 p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem]">
           <h3 className="text-amber-800 font-bold text-sm mb-4 flex items-center gap-2">
             <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
             People waiting to join
@@ -219,7 +219,7 @@ const GroupDetails = () => {
           currentUserId={user.id}
         />
       ) : (
-        <div className="bg-white p-8 md:p-10 rounded-[2rem] md:rounded-[3rem] border-2 border-dashed border-emerald-200 text-center flex flex-col items-center shadow-sm">
+        <div className="bg-white p-6 md:p-10 rounded-[1.5rem] md:rounded-[3rem] border-2 border-dashed border-emerald-200 text-center flex flex-col items-center shadow-sm">
           <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mb-4">
             <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -245,7 +245,7 @@ const GroupDetails = () => {
       )}
 
       {/* Members list */}
-      <div className="bg-white p-6 md:p-8 rounded-[2rem] shadow-sm border border-slate-100">
+      <div className="bg-white p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-sm border border-slate-100">
         <h3 className="text-base md:text-lg font-bold text-slate-800 mb-5">Members</h3>
         <div className="space-y-3">
           {group.members.map((m) => {

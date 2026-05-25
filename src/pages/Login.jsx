@@ -26,9 +26,9 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-[90vh] flex flex-col items-center justify-center p-6 relative animate-in fade-in duration-700">
-      
-      <div className="max-w-md w-full bg-white p-10 md:p-12 rounded-[3rem] shadow-2xl shadow-emerald-900/5 border border-slate-50 relative overflow-hidden">
+    <div className="min-h-[90vh] flex flex-col items-center justify-center px-3 py-6 md:p-6 relative animate-in fade-in duration-700">
+
+      <div className="max-w-md w-full bg-white p-6 md:p-10 lg:p-12 rounded-[2rem] md:rounded-[3rem] shadow-2xl shadow-emerald-900/5 border border-slate-50 relative overflow-hidden">
         {/* Decorative elements */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-bl-full -mr-10 -mt-10 opacity-60"></div>
         <div className="absolute bottom-0 left-0 w-16 h-16 bg-slate-50 rounded-tr-full opacity-40"></div>
@@ -45,7 +45,7 @@ const Login = () => {
               <input 
                 type="email" 
                 placeholder="name@email.com" 
-                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:bg-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-slate-700"
+                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:bg-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-slate-700"
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)} 
                 required 
@@ -57,7 +57,7 @@ const Login = () => {
               <input 
                 type="password" 
                 placeholder="••••••••" 
-                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:bg-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-slate-700"
+                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:bg-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-slate-700"
                 value={password} 
                 onChange={(e) => setPassword(e.target.value)} 
                 required 
@@ -79,8 +79,10 @@ const Login = () => {
 
           <footer className="mt-8 md:mt-10 text-center">
             <p className="text-slate-500 text-sm">
-              Don't have an account?
-              <Link to="/register" className="text-emerald-600 ml-2 font-bold hover:underline">Create one</Link>
+              Don't have an account?{' '}
+              <Link to="/register" className="text-emerald-600 font-bold hover:underline whitespace-nowrap">
+                Create one
+              </Link>
             </p>
           </footer>
         </div>

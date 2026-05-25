@@ -66,7 +66,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto p-4 md:p-12 relative animate-in fade-in duration-700">
+    <div className="max-w-5xl mx-auto px-3 py-4 md:p-12 relative animate-in fade-in duration-700">
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 md:mb-10 gap-4 md:gap-6">
         <div>

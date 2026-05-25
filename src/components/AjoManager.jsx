@@ -394,7 +394,7 @@ const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
   // ---- MAIN RENDER ----
 
   return (
-    <div className="bg-slate-900 rounded-[2rem] md:rounded-[3rem] p-6 md:p-8 text-white shadow-2xl relative overflow-hidden mb-8 border border-slate-800">
+    <div className="bg-slate-900 rounded-[1.5rem] md:rounded-[3rem] p-4 md:p-8 text-white shadow-2xl relative overflow-hidden mb-6 md:mb-8 border border-slate-800">
       <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/10 rounded-full -mr-20 -mt-20 blur-3xl"></div>
 
       {/* Header */}
