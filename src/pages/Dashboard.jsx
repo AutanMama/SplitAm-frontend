@@ -39,9 +39,11 @@ const Dashboard = () => {
     const handsMap = {};
     let total = 0;
     active.forEach((a) => {
-      const myHands = (a.rotation || []).filter(
-        (s) => s.user && (s.user._id || s.user) === currentUserId
-      ).length;
+      const myHands = (a.rotation || []).filter((s) => {
+        // s.member is a populated Member doc; match by its userId (which references the User account)
+        const ownerUserId = s.member?.userId;
+        return ownerUserId && ownerUserId.toString() === currentUserId;
+      }).length;
       handsMap[a._id] = myHands;
       total += (a.contributionAmount || 0) * myHands;
     });

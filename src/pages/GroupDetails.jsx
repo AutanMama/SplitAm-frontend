@@ -249,43 +249,68 @@ const GroupDetails = () => {
         <h3 className="text-base md:text-lg font-bold text-slate-800 mb-5">Members</h3>
         <div className="space-y-3">
           {group.members.map((m) => {
-            const memberId = m.user?._id || m.user;
-            const memberName = m.user?.name || 'Member';
-            const memberEmail = m.user?.email || '';
-            const isMe = memberId === user.id;
+            const memberId = m._id;
+            const memberName = m.name || 'Member';
+            const memberEmail = m.email || '';
+            const memberPhone = m.phone || '';
+            const isMe = m.userId && m.userId.toString() === user.id;
             const memberIsAdmin = m.role === 'ADMIN';
+            const isGhost = m.isGhost || m.status === 'ghost' || !m.userId;
+
+            const handleInvite = async () => {
+              try {
+                await api.post(`/groups/${groupId}/members/${memberId}/invite`);
+                toast.success(`Invite sent to ${memberName}`);
+              } catch (err) {
+                toast.error(err.response?.data?.error || "Couldn't send invite");
+              }
+            };
 
             return (
               <div key={memberId} className="flex items-center justify-between gap-3 group">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-sm font-black shrink-0 ${
-                    isMe ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500'
+                    isMe ? 'bg-slate-900 text-white' : isGhost ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'
                   }`}>
                     {memberName.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-slate-800 truncate">
+                    <p className="text-sm font-bold text-slate-800 truncate flex items-center gap-1.5">
                       {memberName}
-                      {isMe && <span className="text-emerald-600 ml-1.5 font-bold">(you)</span>}
+                      {isMe && <span className="text-emerald-600 font-bold">(you)</span>}
+                      {isGhost && (
+                        <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-bold">GHOST</span>
+                      )}
                     </p>
                     <p className="text-xs text-slate-400 truncate">
-                      {memberIsAdmin ? 'Admin · ' : ''}{memberEmail}
+                      {memberIsAdmin ? 'Admin · ' : ''}{memberEmail || memberPhone || 'No contact'}
                     </p>
                   </div>
                 </div>
 
-                {isAdmin && !isMe && (
-                  <button
-                    onClick={() => handleRemoveMember(memberId)}
-                    className="opacity-100 md:opacity-0 group-hover:opacity-100 p-2 bg-rose-50 text-rose-500 rounded-xl hover:bg-rose-500 hover:text-white transition-all"
-                    title="Remove from group"
-                    aria-label={`Remove ${memberName}`}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                )}
+                <div className="flex items-center gap-2">
+                  {isAdmin && isGhost && memberPhone && (
+                    <button
+                      onClick={handleInvite}
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all"
+                      title="Send WhatsApp invite"
+                    >
+                      Invite
+                    </button>
+                  )}
+                  {isAdmin && !isMe && (
+                    <button
+                      onClick={() => handleRemoveMember(memberId)}
+                      className="opacity-100 md:opacity-0 group-hover:opacity-100 p-2 bg-rose-50 text-rose-500 rounded-xl hover:bg-rose-500 hover:text-white transition-all"
+                      title="Remove from group"
+                      aria-label={`Remove ${memberName}`}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })}

@@ -5,13 +5,21 @@ import { toast } from '../services/toast';
 const showToast = (message, type = 'success') =>
   type === 'error' ? toast.error(message) : toast.success(message);
 
+// Helper: pull an id-string out of either a populated doc or raw ObjectId
+const idStr = (val) => {
+  if (!val) return null;
+  if (typeof val === 'string') return val;
+  if (typeof val === 'object' && val._id) return val._id.toString();
+  return val.toString();
+};
+
 const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
   const ajo = group.activeAjo;
   const [busy, setBusy] = useState(false);
-  const [requestHands, setRequestHands] = useState('');
+  const [requestHandsInput, setRequestHandsInput] = useState('');
   const [requestNote, setRequestNote] = useState('');
-  const [assigningUser, setAssigningUser] = useState(null); // { userId, name, defaultHands }
-  const [assignHands, setAssignHandsLocal] = useState('');
+  const [assigningMember, setAssigningMember] = useState(null); // { memberId, name }
+  const [assignHandsInput, setAssignHandsInput] = useState('');
 
   if (!ajo) return null;
 
@@ -22,38 +30,49 @@ const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
   const isActive = ajo.cycleStatus === 'active';
   const isCompleted = ajo.cycleStatus === 'completed';
 
-  // Filled / empty slots
-  const filledSlots = ajo.rotation.filter((s) => s.user).length;
+  const filledSlots = ajo.rotation.filter((s) => s.member).length;
   const emptySlots = ajo.rotation.length - filledSlots;
 
-  // Current user's slots
-  const myHandSlots = ajo.rotation
-    .map((s, i) => ({ slot: s, index: i }))
-    .filter((x) => x.slot.user && (x.slot.user._id || x.slot.user) === currentUserId);
+  // Find my own Member doc in this group (so I can match "mine" in rotation by member._id)
+  const myMember = useMemo(
+    () => (group.members || []).find((m) => m.userId && m.userId.toString() === currentUserId),
+    [group.members, currentUserId]
+  );
+  const myMemberId = myMember?._id;
+
+  const myHandSlots = useMemo(() => {
+    if (!myMemberId) return [];
+    return ajo.rotation
+      .map((s, i) => ({ slot: s, index: i }))
+      .filter((x) => idStr(x.slot.member) === idStr(myMemberId));
+  }, [ajo.rotation, myMemberId]);
   const myHandCount = myHandSlots.length;
-  const myPendingRequest = (ajo.handRequests || []).find(
-    (r) => r.status === 'pending' && (r.user?._id || r.user) === currentUserId
+
+  const myPendingRequest = useMemo(
+    () =>
+      (ajo.handRequests || []).find(
+        (r) => r.status === 'pending' && idStr(r.member) === idStr(myMemberId)
+      ),
+    [ajo.handRequests, myMemberId]
   );
 
-  // Paid status this cycle
   const paidThisCycle = useMemo(() => {
     const ids = new Set();
     (ajo.contributions || []).forEach((c) => {
-      if (c.cycleIndex === currentCycle) ids.add(c.user?._id || c.user);
+      if (c.cycleIndex === currentCycle) ids.add(idStr(c.member));
     });
     return ids;
   }, [ajo.contributions, currentCycle]);
 
-  // Aggregate by unique users in rotation
   const uniqueParticipants = useMemo(() => {
     const map = new Map();
     ajo.rotation.forEach((s, i) => {
-      if (!s.user) return;
-      const uid = s.user._id || s.user;
-      if (!map.has(uid)) {
-        map.set(uid, { user: s.user, hands: 0, slotIndices: [] });
+      if (!s.member) return;
+      const memberId = idStr(s.member);
+      if (!map.has(memberId)) {
+        map.set(memberId, { member: s.member, hands: 0, slotIndices: [] });
       }
-      const entry = map.get(uid);
+      const entry = map.get(memberId);
       entry.hands += 1;
       entry.slotIndices.push(i);
     });
@@ -61,25 +80,25 @@ const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
   }, [ajo.rotation]);
 
   const totalPotPerRound = baseAmount * totalRounds;
-  const potThisCycle = paidThisCycle.size * baseAmount * 0 +
-    [...paidThisCycle].reduce((sum, uid) => {
-      const p = uniqueParticipants.find((x) => (x.user._id || x.user) === uid);
-      return sum + (p ? p.hands * baseAmount : 0);
-    }, 0);
-  const targetThisCycle = totalPotPerRound;
+  const potThisCycle = [...paidThisCycle].reduce((sum, mid) => {
+    const p = uniqueParticipants.find((x) => idStr(x.member) === mid);
+    return sum + (p ? p.hands * baseAmount : 0);
+  }, 0);
 
-  // Members not yet in rotation, for admin "assign hands" UI
-  const membersNotYetIn = (group.members || []).filter((m) => {
-    const uid = m.user?._id || m.user;
-    return !uniqueParticipants.some((p) => (p.user._id || p.user) === uid);
-  });
+  // Group members not yet in the rotation — admin can directly assign hands to them
+  const membersNotYetIn = useMemo(() => {
+    return (group.members || []).filter((m) => {
+      const memberId = idStr(m._id);
+      return !uniqueParticipants.some((p) => idStr(p.member) === memberId);
+    });
+  }, [group.members, uniqueParticipants]);
 
   const pendingRequests = (ajo.handRequests || []).filter((r) => r.status === 'pending');
 
   // ---- ACTIONS ----
 
   const submitHandsRequest = async () => {
-    const n = Number(requestHands);
+    const n = Number(requestHandsInput);
     if (!Number.isInteger(n) || n < 1) {
       return showToast('Enter how many hands you want (whole number)', 'error');
     }
@@ -91,7 +110,7 @@ const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
         note: requestNote || undefined,
       });
       showToast(`Requested ${n} hand${n === 1 ? '' : 's'}. Waiting for admin.`);
-      setRequestHands('');
+      setRequestHandsInput('');
       setRequestNote('');
       onUpdate();
     } catch (err) {
@@ -133,8 +152,8 @@ const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
   };
 
   const adminAssignHands = async () => {
-    if (!assigningUser) return;
-    const n = Number(assignHands);
+    if (!assigningMember) return;
+    const n = Number(assignHandsInput);
     if (!Number.isInteger(n) || n < 1) {
       return showToast('Enter how many hands (whole number)', 'error');
     }
@@ -144,17 +163,17 @@ const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
     setBusy(true);
     try {
       const emptyIndices = ajo.rotation
-        .map((s, i) => (s.user ? -1 : i))
+        .map((s, i) => (s.member ? -1 : i))
         .filter((i) => i >= 0)
         .slice(0, n);
       await api.post('/ajo/assign-hands', {
         ajoId: ajo._id,
-        userId: assigningUser.userId,
+        memberId: assigningMember.memberId,
         slotPositions: emptyIndices,
       });
-      showToast(`Gave ${assigningUser.name} ${n} hand${n === 1 ? '' : 's'}`);
-      setAssigningUser(null);
-      setAssignHandsLocal('');
+      showToast(`Gave ${assigningMember.name} ${n} hand${n === 1 ? '' : 's'}`);
+      setAssigningMember(null);
+      setAssignHandsInput('');
       onUpdate();
     } catch (err) {
       showToast(err.response?.data?.error || "Couldn't assign", 'error');
@@ -216,10 +235,10 @@ const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
     }
   };
 
-  const markMemberPaid = async (uid, name) => {
+  const markMemberPaid = async (memberId, name) => {
     setBusy(true);
     try {
-      await api.post('/ajo/contribute', { ajoId: ajo._id, userId: uid });
+      await api.post('/ajo/contribute', { ajoId: ajo._id, memberId });
       showToast(`${name} marked as paid`);
       onUpdate();
     } catch (err) {
@@ -229,9 +248,23 @@ const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
     }
   };
 
+  const disburse = async (slotIndex, name) => {
+    if (!window.confirm(`Send this round's pot of ₦${totalPotPerRound.toLocaleString()} to ${name}? Only do this after you've actually paid them.`)) return;
+    setBusy(true);
+    try {
+      await api.post('/ajo/disburse', { ajoId: ajo._id, slotIndex });
+      showToast('Pot disbursed. Moving to the next round.');
+      onUpdate();
+    } catch (err) {
+      showToast(err.response?.data?.error || "Couldn't disburse", 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const sendReminders = async () => {
     if (busy) return;
-    const unpaidCount = uniqueParticipants.filter((p) => !paidThisCycle.has(p.user._id || p.user)).length;
+    const unpaidCount = uniqueParticipants.filter((p) => !paidThisCycle.has(idStr(p.member))).length;
     if (unpaidCount === 0) return showToast('Everyone has paid this round', 'error');
     if (!window.confirm(`Send WhatsApp reminders to ${unpaidCount} unpaid member${unpaidCount === 1 ? '' : 's'}? (Falls back to SMS if WhatsApp fails.)`)) return;
 
@@ -253,34 +286,19 @@ const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
     }
   };
 
-  const disburse = async (slotIndex, name) => {
-    if (!window.confirm(`Send this round's pot of ₦${totalPotPerRound.toLocaleString()} to ${name}? Only do this after you've actually paid them.`)) return;
-    setBusy(true);
-    try {
-      await api.post('/ajo/disburse', { ajoId: ajo._id, slotIndex });
-      showToast('Pot disbursed. Moving to the next round.');
-      onUpdate();
-    } catch (err) {
-      showToast(err.response?.data?.error || "Couldn't disburse", 'error');
-    } finally {
-      setBusy(false);
-    }
-  };
-
   // ---- RENDER HELPERS ----
 
   const SlotRow = ({ slot, index }) => {
     const isRecipient = isActive && index + 1 === currentCycle;
-    const slotUser = slot.user;
-    const slotUserId = slotUser?._id || slotUser;
-    const slotName = slotUser?.name || null;
-    const isMine = slotUserId && slotUserId === currentUserId;
-    const hasPaid = slotUserId && paidThisCycle.has(slotUserId);
-    const myHandsHere = uniqueParticipants.find(
-      (p) => (p.user._id || p.user) === slotUserId
-    )?.hands;
+    const slotMember = slot.member;
+    const slotMemberId = idStr(slotMember);
+    const slotName = slotMember?.name || null;
+    const slotIsGhost = slotMember?.isGhost || slotMember?.status === 'ghost' || !slotMember?.userId;
+    const isMine = !!myMemberId && slotMemberId === idStr(myMemberId);
+    const hasPaid = slotMemberId && paidThisCycle.has(slotMemberId);
+    const myHandsHere = uniqueParticipants.find((p) => idStr(p.member) === slotMemberId)?.hands;
 
-    if (!slotUser) {
+    if (!slotMember) {
       return (
         <div className="flex items-center justify-between p-3 md:p-4 rounded-2xl border border-dashed border-slate-700 bg-slate-800/20 gap-3">
           <div className="flex items-center gap-3 min-w-0">
@@ -321,16 +339,19 @@ const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
             {index + 1}
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-bold text-white truncate">
+            <p className="text-sm font-bold text-white truncate flex items-center gap-1.5 flex-wrap">
               {slotName || 'Member'}
-              {isMine && <span className="text-emerald-400 font-bold ml-1">(you)</span>}
+              {isMine && <span className="text-emerald-400 font-bold">(you)</span>}
+              {slotIsGhost && (
+                <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-bold">GHOST</span>
+              )}
             </p>
             <div className="flex flex-wrap gap-1.5 mt-0.5">
               {myHandsHere > 1 && (
                 <span className="text-xs text-slate-400">
                   Hand {ajo.rotation
                     .slice(0, index + 1)
-                    .filter((s) => s.user && (s.user._id || s.user) === slotUserId).length} of {myHandsHere}
+                    .filter((s) => idStr(s.member) === slotMemberId).length} of {myHandsHere}
                 </span>
               )}
               {isRecipient && !slot.isPaidOut && (
@@ -460,7 +481,7 @@ const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
             <p className="text-lg md:text-xl font-black text-white">
               ₦{potThisCycle.toLocaleString()}
             </p>
-            <p className="text-xs text-slate-500 mt-1">of ₦{targetThisCycle.toLocaleString()}</p>
+            <p className="text-xs text-slate-500 mt-1">of ₦{totalPotPerRound.toLocaleString()}</p>
           </div>
           <div className="bg-slate-800/50 border border-slate-700 p-4 rounded-2xl">
             <p className="text-xs text-slate-500 mb-1">Each round's pot</p>
@@ -482,7 +503,7 @@ const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
             {myHandSlots.length > 1 ? 's ' : ' '}
             {myHandSlots.map((x) => x.index + 1).join(', ')}.
           </p>
-          {isActive && !paidThisCycle.has(currentUserId) && (
+          {isActive && myMemberId && !paidThisCycle.has(idStr(myMemberId)) && (
             <button
               disabled={busy}
               onClick={recordMyContribution}
@@ -491,14 +512,14 @@ const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
               I've paid this round
             </button>
           )}
-          {isActive && paidThisCycle.has(currentUserId) && (
+          {isActive && myMemberId && paidThisCycle.has(idStr(myMemberId)) && (
             <p className="mt-3 text-sm text-emerald-300 font-bold">✓ Paid for round {currentCycle}</p>
           )}
         </div>
       )}
 
       {/* No hands yet — request UI */}
-      {myHandCount === 0 && !isCompleted && (
+      {myMember && myHandCount === 0 && !isCompleted && (
         <div className="mb-5 bg-slate-800/40 border border-slate-700 rounded-2xl p-4 relative z-10">
           {myPendingRequest ? (
             <>
@@ -521,8 +542,8 @@ const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
                   inputMode="numeric"
                   placeholder="Hands"
                   className="w-full md:w-24 px-3 py-2.5 rounded-xl bg-slate-700 text-white text-sm font-bold outline-none focus:ring-2 focus:ring-emerald-500"
-                  value={requestHands}
-                  onChange={(e) => setRequestHands(e.target.value)}
+                  value={requestHandsInput}
+                  onChange={(e) => setRequestHandsInput(e.target.value)}
                 />
                 <input
                   type="text"
@@ -533,7 +554,7 @@ const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
                   onChange={(e) => setRequestNote(e.target.value)}
                 />
                 <button
-                  disabled={busy || !requestHands}
+                  disabled={busy || !requestHandsInput}
                   onClick={submitHandsRequest}
                   className="bg-emerald-500 text-slate-900 font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-emerald-400 disabled:opacity-50"
                 >
@@ -567,22 +588,26 @@ const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
         </div>
       )}
 
-      {/* Admin: assign hands directly to a member */}
+      {/* Admin: assign hands directly */}
       {isAdmin && isSetup && emptySlots > 0 && membersNotYetIn.length > 0 && (
         <div className="mb-5 bg-slate-800/40 border border-slate-700 rounded-2xl p-4 relative z-10">
           <h4 className="text-sm font-bold text-white mb-1">Assign hands directly</h4>
           <p className="text-xs text-slate-400 mb-3">Skip the request flow and assign hands yourself.</p>
           <div className="space-y-2">
             {membersNotYetIn.map((m) => {
-              const uid = m.user?._id || m.user;
-              const name = m.user?.name || 'Member';
-              const isAssigning = assigningUser?.userId === uid;
+              const memberId = m._id;
+              const name = m.name || 'Member';
+              const isGhost = m.isGhost || m.status === 'ghost' || !m.userId;
+              const isAssigningThis = assigningMember?.memberId === memberId;
               return (
-                <div key={uid} className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm text-white font-medium flex-1 min-w-0 truncate">
+                <div key={memberId} className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm text-white font-medium flex-1 min-w-0 truncate flex items-center gap-1.5">
                     {name}
+                    {isGhost && (
+                      <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-bold">GHOST</span>
+                    )}
                   </span>
-                  {isAssigning ? (
+                  {isAssigningThis ? (
                     <>
                       <input
                         type="number"
@@ -590,18 +615,18 @@ const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
                         max={emptySlots}
                         placeholder="Hands"
                         className="w-20 px-2 py-1.5 rounded-lg bg-slate-700 text-white text-sm font-bold outline-none focus:ring-2 focus:ring-emerald-500"
-                        value={assignHands}
-                        onChange={(e) => setAssignHandsLocal(e.target.value)}
+                        value={assignHandsInput}
+                        onChange={(e) => setAssignHandsInput(e.target.value)}
                       />
                       <button
-                        disabled={busy || !assignHands}
+                        disabled={busy || !assignHandsInput}
                         onClick={adminAssignHands}
                         className="bg-emerald-500 text-slate-900 font-bold text-xs px-3 py-1.5 rounded-lg disabled:opacity-50"
                       >
                         Save
                       </button>
                       <button
-                        onClick={() => { setAssigningUser(null); setAssignHandsLocal(''); }}
+                        onClick={() => { setAssigningMember(null); setAssignHandsInput(''); }}
                         className="text-slate-400 text-xs px-2"
                       >
                         ✕
@@ -609,7 +634,7 @@ const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
                     </>
                   ) : (
                     <button
-                      onClick={() => { setAssigningUser({ userId: uid, name }); setAssignHandsLocal('1'); }}
+                      onClick={() => { setAssigningMember({ memberId, name }); setAssignHandsInput('1'); }}
                       className="bg-slate-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-slate-600"
                     >
                       Assign
@@ -632,14 +657,14 @@ const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
         ))}
       </div>
 
-      {/* Members list with paid status — admin only, when active */}
+      {/* Who's paid this cycle — admin only, when active */}
       {isAdmin && isActive && uniqueParticipants.length > 0 && (
         <div className="mt-6 pt-5 border-t border-slate-800 relative z-10">
           <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
             <h4 className="text-xs font-bold text-slate-400">
               Who's paid round {currentCycle}
             </h4>
-            {uniqueParticipants.some((p) => !paidThisCycle.has(p.user._id || p.user)) && (
+            {uniqueParticipants.some((p) => !paidThisCycle.has(idStr(p.member))) && (
               <button
                 disabled={busy}
                 onClick={sendReminders}
@@ -655,13 +680,14 @@ const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
           </div>
           <div className="space-y-2">
             {uniqueParticipants.map((p) => {
-              const uid = p.user._id || p.user;
-              const name = p.user.name || 'Member';
-              const paid = paidThisCycle.has(uid);
+              const memberId = idStr(p.member);
+              const name = p.member?.name || 'Member';
+              const paid = paidThisCycle.has(memberId);
               const amountOwed = baseAmount * p.hands;
+              const isGhost = p.member?.isGhost || p.member?.status === 'ghost' || !p.member?.userId;
               return (
                 <div
-                  key={uid}
+                  key={memberId}
                   className={`flex items-center justify-between p-3 rounded-xl gap-3 ${
                     paid ? 'bg-emerald-500/10' : 'bg-slate-800/50'
                   }`}
@@ -673,7 +699,12 @@ const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
                       {name.charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-bold text-white truncate">{name}</p>
+                      <p className="text-sm font-bold text-white truncate flex items-center gap-1.5">
+                        {name}
+                        {isGhost && (
+                          <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-bold">GHOST</span>
+                        )}
+                      </p>
                       <p className="text-xs text-slate-400">
                         {p.hands} hand{p.hands === 1 ? '' : 's'} · ₦{amountOwed.toLocaleString()}
                       </p>
@@ -686,7 +717,7 @@ const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
                   ) : (
                     <button
                       disabled={busy}
-                      onClick={() => markMemberPaid(uid, name)}
+                      onClick={() => markMemberPaid(memberId, name)}
                       className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-700 text-slate-200 hover:bg-slate-600 disabled:opacity-50 shrink-0"
                     >
                       Mark paid
@@ -704,7 +735,7 @@ const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
 
 const PendingRequestCard = ({ req, baseAmount, emptySlots, busy, onApprove, onReject }) => {
   const [editedHands, setEditedHands] = useState(req.requestedHands);
-  const name = req.user?.name || 'Someone';
+  const name = req.member?.name || 'Someone';
   const totalAmount = baseAmount * Number(editedHands || 0);
 
   return (
