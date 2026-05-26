@@ -3,10 +3,11 @@ import { subscribeToToasts } from '../services/toast';
 
 /**
  * Global toaster — renders all toast messages in one consistent place.
- *  - Mobile: anchored above the bottom navbar so it's never hidden by keyboard or off-screen
- *  - Desktop: top-center, below the top navbar
+ *  - Always at the TOP on both mobile and desktop
+ *  - Mobile: just below the status bar / URL bar (top-4, respects iPhone notch via safe-area-inset)
+ *  - Desktop: below the top navbar (top-24)
+ *  - Same place every page, every action — eyes know where to look
  *  - Always above modals (z-[300])
- *  - Bigger and bolder than the old inline toasts so users can't miss it
  */
 const Toaster = () => {
   const [items, setItems] = useState([]);
@@ -23,7 +24,7 @@ const Toaster = () => {
   if (items.length === 0) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-24 md:bottom-auto md:top-24 z-[300] flex flex-col items-center gap-2 px-4 pointer-events-none">
+    <div className="fixed inset-x-0 top-4 md:top-24 z-[300] flex flex-col items-center gap-2 px-4 pointer-events-none">
       {items.map((item) => (
         <ToastItem key={item.id} item={item} />
       ))}
@@ -52,7 +53,7 @@ const ToastItem = ({ item }) => {
 
   return (
     <div
-      className={`pointer-events-auto w-full max-w-md flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl border-2 ${bgClass} animate-in slide-in-from-bottom-5 md:slide-in-from-top-5 fade-in duration-300`}
+      className={`pointer-events-auto w-full max-w-md flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl border-2 ${bgClass} animate-in slide-in-from-top-5 fade-in duration-300`}
       role="status"
       aria-live="polite"
     >
