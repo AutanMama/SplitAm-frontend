@@ -5,6 +5,7 @@ import { toast } from '../services/toast';
 
 import AjoManager from '../components/AjoManager';
 import AddMemberModal from '../components/AddMemberModal';
+import ActivityFeed from '../components/ActivityFeed';
 
 const GroupDetails = () => {
   const { groupId } = useParams();
@@ -316,6 +317,9 @@ const GroupDetails = () => {
           })}
         </div>
       </div>
+
+      {/* Activity feed — transparency for everyone in the group */}
+      <ActivityFeed groupId={groupId} refreshKey={group.activeAjo?.updatedAt || group.updatedAt} />
 
       {/* Risky actions */}
       <div className="pt-4 md:pt-6 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 md:gap-6">

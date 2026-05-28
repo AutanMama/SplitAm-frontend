@@ -20,6 +20,8 @@ const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
   const [requestNote, setRequestNote] = useState('');
   const [assigningMember, setAssigningMember] = useState(null); // { memberId, name }
   const [assignHandsInput, setAssignHandsInput] = useState('');
+  const [showSummary, setShowSummary] = useState(false);
+  const [summaryCopied, setSummaryCopied] = useState(false);
 
   if (!ajo) return null;
 
@@ -260,6 +262,67 @@ const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
     } finally {
       setBusy(false);
     }
+  };
+
+  const toggleAutoReminders = async () => {
+    if (busy) return;
+    const newValue = !ajo.autoRemindersEnabled;
+    setBusy(true);
+    try {
+      await api.post('/ajo/toggle-reminders', { ajoId: ajo._id, enabled: newValue });
+      showToast(newValue ? 'Auto-reminders turned on' : 'Auto-reminders turned off');
+      onUpdate();
+    } catch (err) {
+      showToast(err.response?.data?.error || "Couldn't update setting", 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const buildSummary = () => {
+    const recipientSlot = ajo.rotation[currentCycle - 1];
+    const recipientName = recipientSlot?.member?.name || 'TBD';
+    const paid = uniqueParticipants.filter((p) => paidThisCycle.has(idStr(p.member)));
+    const pending = uniqueParticipants.filter((p) => !paidThisCycle.has(idStr(p.member)));
+
+    const lines = [];
+    lines.push(`📊 ${group.name || 'Group'} — ${ajo.title}`);
+    lines.push('');
+    lines.push(`Round ${currentCycle} of ${totalRounds}`);
+    lines.push(`🎯 This round's pot: ₦${totalPotPerRound.toLocaleString()}`);
+    lines.push(`👤 Going to: ${recipientName}`);
+    lines.push('');
+
+    if (paid.length > 0) {
+      lines.push(`✓ Paid (${paid.length}):`);
+      paid.forEach((p) => lines.push(`• ${p.member?.name || 'Member'}`));
+      lines.push('');
+    }
+    if (pending.length > 0) {
+      lines.push(`⏳ Still pending (${pending.length}):`);
+      pending.forEach((p) => lines.push(`• ${p.member?.name || 'Member'}`));
+      lines.push('');
+    }
+
+    lines.push('Run your ajo on SplitAm 👇');
+    lines.push('https://split-am-frontend.vercel.app');
+    return lines.join('\n');
+  };
+
+  const copySummary = async () => {
+    try {
+      await navigator.clipboard.writeText(buildSummary());
+      setSummaryCopied(true);
+      showToast('Summary copied — paste it in your WhatsApp group');
+      setTimeout(() => setSummaryCopied(false), 2000);
+    } catch {
+      showToast("Couldn't copy. Long-press the text below to select it.", 'error');
+    }
+  };
+
+  const shareSummaryWhatsApp = () => {
+    const url = `https://wa.me/?text=${encodeURIComponent(buildSummary())}`;
+    window.open(url, '_blank', 'noopener');
   };
 
   const sendReminders = async () => {
@@ -664,19 +727,42 @@ const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
             <h4 className="text-xs font-bold text-slate-400">
               Who's paid round {currentCycle}
             </h4>
-            {uniqueParticipants.some((p) => !paidThisCycle.has(idStr(p.member))) && (
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 disabled={busy}
-                onClick={sendReminders}
-                className="text-xs font-bold bg-emerald-500 text-slate-900 px-3 py-1.5 rounded-lg hover:bg-emerald-400 transition-all disabled:opacity-50 flex items-center gap-1.5"
-                title="Send WhatsApp reminders to unpaid members"
+                onClick={toggleAutoReminders}
+                className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all disabled:opacity-50 flex items-center gap-1.5 ${
+                  ajo.autoRemindersEnabled
+                    ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30'
+                    : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+                }`}
+                title={ajo.autoRemindersEnabled ? 'Daily auto-reminders are ON' : 'Daily auto-reminders are OFF'}
               >
-                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 0C5.4 0 0 5.4 0 12c0 2.1.5 4.1 1.5 5.9L0 24l6.3-1.7c1.7.9 3.7 1.4 5.7 1.4 6.6 0 12-5.4 12-12S18.6 0 12 0zm0 21.8c-1.8 0-3.6-.5-5.1-1.4l-.4-.2-3.8 1 1-3.7-.2-.4c-1-1.6-1.5-3.4-1.5-5.2 0-5.5 4.5-10 10-10s10 4.5 10 10-4.5 9.9-10 9.9zm5.5-7.5c-.3-.2-1.8-.9-2.1-1s-.5-.2-.7.2-.8 1-.9 1.2-.3.2-.6.1-1.3-.5-2.4-1.5c-.9-.8-1.5-1.8-1.7-2.1s0-.5.1-.6c.1-.1.3-.3.4-.5.1-.2.2-.3.3-.5s.1-.4 0-.5-.7-1.6-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1.1 2.8 1.2 3 2.1 3.2 5.1 4.5c.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.1-.3-.2-.6-.4z"/>
-                </svg>
-                Send reminders
+                <span className={`w-1.5 h-1.5 rounded-full ${ajo.autoRemindersEnabled ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
+                Auto {ajo.autoRemindersEnabled ? 'ON' : 'OFF'}
               </button>
-            )}
+              <button
+                disabled={busy}
+                onClick={() => setShowSummary(true)}
+                className="text-xs font-bold bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-600 transition-all disabled:opacity-50"
+                title="Generate a shareable WhatsApp summary"
+              >
+                Share update
+              </button>
+              {uniqueParticipants.some((p) => !paidThisCycle.has(idStr(p.member))) && (
+                <button
+                  disabled={busy}
+                  onClick={sendReminders}
+                  className="text-xs font-bold bg-emerald-500 text-slate-900 px-3 py-1.5 rounded-lg hover:bg-emerald-400 transition-all disabled:opacity-50 flex items-center gap-1.5"
+                  title="Send WhatsApp reminders to unpaid members now"
+                >
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 0C5.4 0 0 5.4 0 12c0 2.1.5 4.1 1.5 5.9L0 24l6.3-1.7c1.7.9 3.7 1.4 5.7 1.4 6.6 0 12-5.4 12-12S18.6 0 12 0zm0 21.8c-1.8 0-3.6-.5-5.1-1.4l-.4-.2-3.8 1 1-3.7-.2-.4c-1-1.6-1.5-3.4-1.5-5.2 0-5.5 4.5-10 10-10s10 4.5 10 10-4.5 9.9-10 9.9zm5.5-7.5c-.3-.2-1.8-.9-2.1-1s-.5-.2-.7.2-.8 1-.9 1.2-.3.2-.6.1-1.3-.5-2.4-1.5c-.9-.8-1.5-1.8-1.7-2.1s0-.5.1-.6c.1-.1.3-.3.4-.5.1-.2.2-.3.3-.5s.1-.4 0-.5-.7-1.6-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1.1 2.8 1.2 3 2.1 3.2 5.1 4.5c.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.1-.3-.2-.6-.4z"/>
+                  </svg>
+                  Send now
+                </button>
+              )}
+            </div>
           </div>
           <div className="space-y-2">
             {uniqueParticipants.map((p) => {
@@ -726,6 +812,57 @@ const AjoManager = ({ group, isAdmin, onUpdate, currentUserId }) => {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Summary share modal */}
+      {showSummary && (
+        <div className="fixed inset-0 z-[210] flex items-end md:items-center justify-center p-0 md:p-4 bg-slate-900/80 backdrop-blur-sm">
+          <div className="bg-white text-slate-800 rounded-t-[2.5rem] md:rounded-[2.5rem] p-6 md:p-8 max-w-md w-full shadow-2xl animate-in slide-in-from-bottom-10 md:zoom-in-95 duration-200 max-h-[85dvh] overflow-y-auto pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+            <div className="md:hidden w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-4" aria-hidden="true" />
+
+            <div className="flex justify-between items-start mb-4 gap-3">
+              <div>
+                <h3 className="text-xl md:text-2xl font-black text-slate-900">Share round update</h3>
+                <p className="text-sm text-slate-500 mt-1">Send to your WhatsApp group. Everyone sees who paid and who hasn't.</p>
+              </div>
+              <button
+                onClick={() => setShowSummary(false)}
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all shrink-0"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <pre className="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-xs text-slate-700 font-mono whitespace-pre-wrap break-words mb-4 leading-relaxed">
+              {buildSummary()}
+            </pre>
+
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                onClick={copySummary}
+                className={`flex-1 py-3.5 rounded-2xl font-bold text-sm transition-all ${
+                  summaryCopied ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                {summaryCopied ? 'Copied!' : 'Copy text'}
+              </button>
+              <button
+                onClick={shareSummaryWhatsApp}
+                className="flex-[2] bg-emerald-600 text-white py-3.5 rounded-2xl font-bold text-sm shadow-xl shadow-emerald-100 hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 0C5.4 0 0 5.4 0 12c0 2.1.5 4.1 1.5 5.9L0 24l6.3-1.7c1.7.9 3.7 1.4 5.7 1.4 6.6 0 12-5.4 12-12S18.6 0 12 0zm0 21.8c-1.8 0-3.6-.5-5.1-1.4l-.4-.2-3.8 1 1-3.7-.2-.4c-1-1.6-1.5-3.4-1.5-5.2 0-5.5 4.5-10 10-10s10 4.5 10 10-4.5 9.9-10 9.9zm5.5-7.5c-.3-.2-1.8-.9-2.1-1s-.5-.2-.7.2-.8 1-.9 1.2-.3.2-.6.1-1.3-.5-2.4-1.5c-.9-.8-1.5-1.8-1.7-2.1s0-.5.1-.6c.1-.1.3-.3.4-.5.1-.2.2-.3.3-.5s.1-.4 0-.5-.7-1.6-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1.1 2.8 1.2 3 2.1 3.2 5.1 4.5c.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.1-.3-.2-.6-.4z"/>
+                </svg>
+                Share on WhatsApp
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-400 text-center mt-4">
+              The message includes a "Powered by SplitAm" footer — viral distribution in your group.
+            </p>
           </div>
         </div>
       )}
