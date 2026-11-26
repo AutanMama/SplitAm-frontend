@@ -1,0 +1,109 @@
+@import 'tailwindcss';
+
+/* Brand tokens. Components use these names only; see BRAND.md. */
+@theme {
+  --color-bg: #f4f5f2;
+  --color-surface: #ffffff;
+  --color-sunk: #eef0ec;
+  --color-line: #e2e5df;
+  --color-ink: #0f1a16;
+  --color-muted: #5a6560;
+
+  --color-forest: #0f3d2e;
+  --color-forest-hover: #0b2f23;
+  --color-forest-muted: #a9c2b6;
+  --color-on-forest: #ffffff;
+  --color-lime: #c8f169;
+  --color-on-lime: #0f1a16;
+
+  --color-paid: #1f7a4d;
+  --color-paid-soft: #e3f2e9;
+  --color-due: #8a5200;
+  --color-due-soft: #fdf1dc;
+  --color-danger: #b3261e;
+  --color-danger-soft: #fce8e6;
+
+  --font-sans: 'Onest Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
+
+  --radius-card: 1.25rem;
+  --shadow-card: 0 1px 2px rgb(15 26 22 / 0.04), 0 4px 16px -8px rgb(15 26 22 / 0.12);
+  --shadow-float: 0 12px 40px -12px rgb(15 26 22 / 0.35);
+}
+
+body {
+  @apply bg-bg font-sans text-ink antialiased;
+  font-feature-settings: 'tnum' 0;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.02em;
+}
+
+.money {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-forest);
+  outline-offset: 2px;
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes toast-in {
+  from {
+    transform: translateY(-12px);
+    opacity: 0;
+  }
+}
+@keyframes shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.animate-sheet {
+  animation: sheet-up 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.animate-fade {
+  animation: fade-in 0.2s ease-out;
+}
+.animate-toast {
+  animation: toast-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-sunk);
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.6), transparent);
+  animation: shimmer 1.4s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-sheet,
+  .animate-fade,
+  .animate-toast,
+  .skeleton::after {
+    animation: none;
+  }
+}
