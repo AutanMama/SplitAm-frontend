@@ -1,5 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import api from '../services/api';
+import { useEffect, useState } from 'react';
+import Card, { CardHeader } from '../ui/Card';
+import Button from '../ui/Button';
+import Skeleton from '../ui/Skeleton';
+import api from '../../services/api';
+import { relativeTime } from '../../lib/format';
 
 const fmtAmount = (n) => `₦${Number(n || 0).toLocaleString()}`;
 
@@ -71,115 +75,74 @@ const formatLine = (entry) => {
   }
 };
 
-const relativeTime = (iso) => {
-  const then = new Date(iso).getTime();
-  const now = Date.now();
-  const diff = Math.max(0, now - then);
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.floor(h / 24);
-  if (d < 7) return `${d}d ago`;
-  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-};
+const GOOD = new Set(['GROUP_CREATED', 'MEMBER_ADDED_EMAIL', 'MEMBER_JOINED', 'MEMBER_APPROVED', 'MEMBER_INVITED', 'AJO_LAUNCHED', 'AJO_COMPLETED', 'HAND_REQUEST_APPROVED', 'HANDS_ASSIGNED', 'CONTRIBUTION_RECORDED'])
+const WAITING = new Set(['MEMBER_ADDED_GHOST', 'HAND_REQUEST_SUBMITTED', 'POT_DISBURSED'])
+const BAD = new Set(['GROUP_DELETED', 'MEMBER_REMOVED', 'HAND_REQUEST_REJECTED'])
 
-const COLOR_BY_ACTION = {
-  GROUP_CREATED: 'bg-emerald-100 text-emerald-700',
-  GROUP_DELETED: 'bg-rose-100 text-rose-700',
-  MEMBER_ADDED_GHOST: 'bg-amber-100 text-amber-700',
-  MEMBER_ADDED_EMAIL: 'bg-emerald-100 text-emerald-700',
-  MEMBER_JOINED: 'bg-emerald-100 text-emerald-700',
-  MEMBER_APPROVED: 'bg-emerald-100 text-emerald-700',
-  MEMBER_REMOVED: 'bg-rose-100 text-rose-700',
-  MEMBER_INVITED: 'bg-emerald-100 text-emerald-700',
-  AJO_CREATED: 'bg-slate-200 text-slate-700',
-  AJO_LAUNCHED: 'bg-emerald-100 text-emerald-700',
-  AJO_COMPLETED: 'bg-emerald-100 text-emerald-700',
-  HAND_REQUEST_SUBMITTED: 'bg-amber-100 text-amber-700',
-  HAND_REQUEST_APPROVED: 'bg-emerald-100 text-emerald-700',
-  HAND_REQUEST_REJECTED: 'bg-rose-100 text-rose-700',
-  HANDS_ASSIGNED: 'bg-emerald-100 text-emerald-700',
-  SLOT_MOVED: 'bg-slate-200 text-slate-700',
-  SLOT_UNASSIGNED: 'bg-slate-200 text-slate-700',
-  CONTRIBUTION_RECORDED: 'bg-emerald-100 text-emerald-700',
-  POT_DISBURSED: 'bg-amber-100 text-amber-700',
-  REMINDERS_SENT: 'bg-slate-200 text-slate-700',
-};
+const dotFor = (type) => (GOOD.has(type) ? 'bg-paid' : WAITING.has(type) ? 'bg-due' : BAD.has(type) ? 'bg-danger' : 'bg-muted/50')
 
 const ActivityFeed = ({ groupId, refreshKey }) => {
-  const [entries, setEntries] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Loading is derived: we're loading until the stored result belongs to the current request.
+  const requestKey = `${groupId}:${refreshKey}`;
+  const [result, setResult] = useState({ key: null, entries: [] });
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     api
       .get(`/groups/${groupId}/activity?limit=50`)
       .then(({ data }) => {
-        if (!cancelled) setEntries(Array.isArray(data) ? data : []);
+        if (!cancelled) setResult({ key: requestKey, entries: Array.isArray(data) ? data : [] });
       })
       .catch(() => {
-        if (!cancelled) setEntries([]);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) setResult({ key: requestKey, entries: [] });
       });
-    return () => { cancelled = true; };
-  }, [groupId, refreshKey]);
+    return () => {
+      cancelled = true;
+    };
+  }, [groupId, requestKey]);
 
+  const loading = result.key !== requestKey && result.entries.length === 0;
+  const { entries } = result;
   const visible = expanded ? entries : entries.slice(0, 5);
 
   return (
-    <div className="bg-white p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-sm border border-slate-100">
-      <div className="flex items-center justify-between gap-3 mb-4">
-        <div>
-          <h3 className="text-base md:text-lg font-bold text-slate-800">Activity</h3>
-          <p className="text-xs text-slate-400 mt-0.5">Every action in this group, visible to everyone.</p>
-        </div>
-        {entries.length > 5 && (
-          <button
-            onClick={() => setExpanded((v) => !v)}
-            className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg hover:bg-emerald-100 transition-all shrink-0"
-          >
-            {expanded ? 'Show recent' : `Show all (${entries.length})`}
-          </button>
-        )}
-      </div>
+    <Card>
+      <CardHeader
+        title="Activity"
+        description="Every action in this group, visible to everyone."
+        action={
+          entries.length > 5 && (
+            <Button size="sm" variant="ghost" onClick={() => setExpanded((v) => !v)}>
+              {expanded ? 'Show recent' : `Show all (${entries.length})`}
+            </Button>
+          )
+        }
+      />
 
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-12 bg-slate-50 rounded-xl animate-pulse" />
+            <Skeleton key={i} className="h-10" />
           ))}
         </div>
       ) : entries.length === 0 ? (
-        <p className="text-sm text-slate-400 italic py-4 text-center">
-          Nothing has happened yet. Actions will show up here.
-        </p>
+        <p className="py-4 text-center text-sm text-muted">Nothing has happened yet. Actions will show up here.</p>
       ) : (
-        <ol className="space-y-3 relative">
-          {visible.map((entry, i) => {
-            const dot = COLOR_BY_ACTION[entry.actionType] || 'bg-slate-200 text-slate-700';
-            const isLast = i === visible.length - 1;
-            return (
-              <li key={entry._id} className="flex gap-3 relative">
-                <div className="flex flex-col items-center shrink-0">
-                  <div className={`w-2.5 h-2.5 rounded-full mt-1.5 ${dot}`} aria-hidden="true" />
-                  {!isLast && <div className="w-px flex-1 bg-slate-100 mt-1" />}
-                </div>
-                <div className="flex-1 min-w-0 pb-1">
-                  <p className="text-sm text-slate-700 leading-snug">{formatLine(entry)}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">{relativeTime(entry.createdAt)}</p>
-                </div>
-              </li>
-            );
-          })}
+        <ol>
+          {visible.map((entry, i) => (
+            <li key={entry._id} className="relative flex gap-3 pb-4 last:pb-0">
+              {i < visible.length - 1 && <span className="absolute top-4 bottom-0 left-[4px] w-px bg-line" aria-hidden />}
+              <span className={`relative mt-1.5 size-2.5 shrink-0 rounded-full ${dotFor(entry.actionType)}`} aria-hidden />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm leading-snug">{formatLine(entry)}</p>
+                <p className="mt-0.5 text-xs text-muted">{relativeTime(entry.createdAt)}</p>
+              </div>
+            </li>
+          ))}
         </ol>
       )}
-    </div>
+    </Card>
   );
 };
 
