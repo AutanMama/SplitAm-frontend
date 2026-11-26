@@ -1,20 +1,20 @@
 import LandingHeader from '../components/landing/LandingHeader'
 import LandingHero from '../components/landing/LandingHero'
-import HowItWorks from '../components/landing/HowItWorks'
-import Features from '../components/landing/Features'
+import RoundStory from '../components/landing/RoundStory'
+import FairRules from '../components/landing/FairRules'
 import Faq from '../components/landing/Faq'
 import LandingFooter from '../components/landing/LandingFooter'
+import { AdireStrip } from '../components/brand/AdirePattern'
 
 export default function Landing() {
   return (
-    <div className="min-h-dvh scroll-smooth">
+    <div className="min-h-dvh">
       <LandingHeader />
-      <div>
-        <LandingHero />
-        <HowItWorks />
-        <Features />
-        <Faq />
-      </div>
+      <LandingHero />
+      <AdireStrip />
+      <RoundStory />
+      <FairRules />
+      <Faq />
       <LandingFooter />
     </div>
   )

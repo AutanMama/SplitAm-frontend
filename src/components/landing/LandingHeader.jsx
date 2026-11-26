@@ -6,8 +6,8 @@ import Button from '../ui/Button'
 
 const LINKS = [
   { href: '#how-it-works', label: 'How it works' },
-  { href: '#features', label: 'Features' },
-  { href: '#faq', label: 'FAQ' },
+  { href: '#features', label: 'Why it works' },
+  { href: '#faq', label: 'Questions' },
 ]
 
 export default function LandingHeader() {
@@ -22,27 +22,31 @@ export default function LandingHeader() {
   }, [])
 
   return (
-    <header className={`sticky top-0 z-50 transition-colors ${scrolled || open ? 'border-b border-line bg-bg/90 backdrop-blur-md' : 'border-b border-transparent'}`}>
+    <header
+      className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${
+        scrolled || open ? 'border-b border-line bg-bg/90 text-ink backdrop-blur-md' : 'border-b border-transparent text-on-indigo'
+      }`}
+    >
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-8 px-4 md:px-6">
-        <Logo />
+        <Logo onDark={!scrolled && !open} />
         <nav className="hidden items-center gap-1 md:flex" aria-label="Sections">
           {LINKS.map((l) => (
-            <a key={l.href} href={l.href} className="rounded-lg px-3 py-2 text-sm font-medium text-muted hover:text-ink">
+            <a key={l.href} href={l.href} className={`rounded-lg px-3 py-2 text-sm font-medium ${scrolled ? 'text-muted hover:text-ink' : 'text-indigo-muted hover:text-on-indigo'}`}>
               {l.label}
             </a>
           ))}
         </nav>
         <div className="ml-auto hidden items-center gap-2 md:flex">
-          <Button as={Link} to="/login" variant="ghost">
+          <Button as={Link} to="/login" variant="ghost" className={scrolled ? '' : '!text-on-indigo hover:!bg-white/10'}>
             Sign in
           </Button>
-          <Button as={Link} to="/register">
-            Get started
+          <Button as={Link} to="/register" variant={scrolled ? 'primary' : 'kola'}>
+            Start a circle
           </Button>
         </div>
         <button
           type="button"
-          className="ml-auto grid size-10 place-items-center rounded-lg hover:bg-sunk md:hidden"
+          className="ml-auto grid size-10 place-items-center rounded-lg hover:bg-white/10 md:hidden"
           aria-label={open ? 'Close menu' : 'Open menu'}
           aria-expanded={open}
           onClick={() => setOpen((o) => !o)}
@@ -65,7 +69,7 @@ export default function LandingHeader() {
               Sign in
             </Button>
             <Button as={Link} to="/register">
-              Get started
+              Start a circle
             </Button>
           </div>
         </div>
