@@ -75,13 +75,13 @@ export default function AddMemberSheet({ groupId, inviteCode, open, onClose, onM
   return (
     <Sheet open={open} onClose={onClose} title="Add people" description="Share the code, or add someone yourself.">
       <div className="space-y-5 pb-2">
-        <div className="flex items-center justify-between gap-3 rounded-2xl bg-forest p-4 text-on-forest">
+        <div className="flex items-center justify-between gap-3 rounded-2xl bg-indigo p-4 text-on-indigo">
           <div>
-            <p className="text-sm text-forest-muted">Invite code</p>
-            <p className="font-mono text-2xl font-semibold tracking-[0.15em] text-lime">{inviteCode}</p>
-            <p className="mt-1 text-xs text-forest-muted">Anyone with this code can ask to join. You approve them.</p>
+            <p className="text-sm text-indigo-muted">Invite code</p>
+            <p className="font-mono text-2xl font-semibold tracking-[0.15em] text-kola">{inviteCode}</p>
+            <p className="mt-1 text-xs text-indigo-muted">Anyone with this code can ask to join. You approve them.</p>
           </div>
-          <Button variant="lime" size="sm" onClick={copyCode}>
+          <Button variant="kola" size="sm" onClick={copyCode}>
             {copied ? <Check className="size-4" aria-hidden /> : <Copy className="size-4" aria-hidden />}
             {copied ? 'Copied' : 'Copy'}
           </Button>

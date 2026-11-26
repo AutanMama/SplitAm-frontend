@@ -14,7 +14,7 @@ function slotState(slot, index, derived) {
 
 const DOT = {
   collected: 'bg-paid text-white',
-  now: 'bg-lime text-on-lime ring-4 ring-lime/30',
+  now: 'bg-kola text-on-kola ring-4 ring-kola/30',
   upcoming: 'bg-surface text-muted border border-line',
   empty: 'border border-dashed border-line text-muted',
 }
@@ -36,7 +36,7 @@ function SlotRow({ slot, index, derived, isAdmin, busy, actions, isLast, rotatio
         {state === 'collected' ? <Check className="size-4" strokeWidth={3} aria-hidden /> : index + 1}
       </span>
 
-      <div className={`flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl px-3 py-2 ${state === 'now' ? 'bg-lime/25' : ''}`}>
+      <div className={`flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl px-3 py-2 ${state === 'now' ? 'bg-kola/25' : ''}`}>
         {member ? (
           <>
             <Avatar name={name} size="sm" tone={isMine ? 'me' : isGhostMember(member) ? 'ghost' : 'neutral'} />

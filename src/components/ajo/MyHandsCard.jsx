@@ -9,7 +9,7 @@ export default function MyHandsCard({ derived, busy, onPay }) {
   const collectsNow = isActive && rounds.includes(currentCycle)
 
   return (
-    <Card className={collectsNow ? 'border-lime ring-2 ring-lime/60' : ''}>
+    <Card className={collectsNow ? 'border-kola ring-2 ring-kola/60' : ''}>
       <p className="text-sm font-semibold text-muted">Your stake · {plural(myHandCount, 'hand')}</p>
       <div className="mt-3 grid grid-cols-2 gap-4">
         <div>
@@ -24,7 +24,7 @@ export default function MyHandsCard({ derived, busy, onPay }) {
         </div>
       </div>
 
-      {collectsNow && <p className="mt-4 rounded-xl bg-lime px-3 py-2 text-sm font-semibold text-on-lime">It’s your turn this round. The pot comes to you.</p>}
+      {collectsNow && <p className="mt-4 rounded-xl bg-kola px-3 py-2 text-sm font-semibold text-on-kola">It’s your turn this round. The pot comes to you.</p>}
 
       {isActive &&
         (iHavePaid ? (

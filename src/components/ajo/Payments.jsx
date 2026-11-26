@@ -17,7 +17,7 @@ function ReminderSwitch({ on, busy, onToggle }) {
       className="flex items-center gap-2 rounded-lg py-1 text-sm font-medium whitespace-nowrap text-muted hover:text-ink disabled:opacity-50"
     >
       <span className={`relative block h-5 w-9 shrink-0 rounded-full transition-colors ${on ? 'bg-paid' : 'bg-line'}`}>
-        <span className={`absolute top-0.5 size-4 rounded-full bg-white shadow transition-transform ${on ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
+        <span className={`absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow transition-transform ${on ? 'translate-x-4' : 'translate-x-0'}`} />
       </span>
       Send daily reminders automatically
     </button>

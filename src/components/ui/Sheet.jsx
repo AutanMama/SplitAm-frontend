@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
+import SerifText from './SerifText'
 
 const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
 
@@ -54,7 +55,9 @@ export default function Sheet({ open, onClose, title, description, children, foo
         <div className="mx-auto mt-2.5 h-1 w-10 rounded-full bg-line md:hidden" aria-hidden />
         <header className="flex items-start justify-between gap-4 px-5 pt-4 pb-2 md:px-6 md:pt-6">
           <div>
-            <h2 className="text-xl font-bold">{title}</h2>
+            <h2 className="serif text-2xl">
+              <SerifText>{title}</SerifText>
+            </h2>
             {description && <p className="mt-1 text-sm text-muted">{description}</p>}
           </div>
           <button type="button" onClick={onClose} aria-label="Close" className="-mr-1 grid size-9 shrink-0 place-items-center rounded-full text-muted hover:bg-sunk hover:text-ink">

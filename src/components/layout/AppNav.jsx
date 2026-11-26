@@ -45,7 +45,7 @@ function DesktopBar({ user }) {
 
 function MobileTabs({ user }) {
   const { pathname } = useLocation()
-  const item = (active) => `flex flex-1 flex-col items-center gap-1 py-2 text-[11px] font-semibold ${active ? 'text-forest' : 'text-muted'}`
+  const item = (active) => `flex flex-1 flex-col items-center gap-1 py-2 text-xs font-semibold ${active ? 'text-indigo' : 'text-muted'}`
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-[200] flex border-t border-line bg-surface/95 px-2 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur-md md:hidden"
@@ -55,7 +55,7 @@ function MobileTabs({ user }) {
         <NavLink key={to} to={to} end={end} className={({ isActive }) => item(isActive)}>
           {({ isActive }) => (
             <>
-              <span className={`grid h-7 w-12 place-items-center rounded-full transition ${isActive ? 'bg-forest/10' : ''}`}>
+              <span className={`grid h-7 w-12 place-items-center rounded-full transition ${isActive ? 'bg-indigo/10' : ''}`}>
                 <Icon className="size-5" strokeWidth={isActive ? 2.4 : 2} aria-hidden />
               </span>
               {label}
@@ -64,7 +64,7 @@ function MobileTabs({ user }) {
         </NavLink>
       ))}
       <Link to="/profile" className={item(pathname === '/profile')}>
-        <Avatar name={user?.name} size="sm" tone={pathname === '/profile' ? 'me' : 'neutral'} className="size-7 text-[11px]" />
+        <Avatar name={user?.name} size="sm" tone={pathname === '/profile' ? 'me' : 'neutral'} className="size-7 text-xs" />
         You
       </Link>
     </nav>

@@ -38,7 +38,7 @@ export default function CreateGroup() {
       <Link to="/" className="inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-ink">
         <ArrowLeft className="size-4" aria-hidden /> Your groups
       </Link>
-      <h1 className="mt-3 text-3xl font-bold">New group</h1>
+      <h1 className="serif mt-3 text-4xl">New group</h1>
       <p className="mt-1 text-muted">A group is where you run an ajo with your guys, your office or your family.</p>
 
       <div className="mt-8 grid items-start gap-6 md:grid-cols-[1fr_280px]">
@@ -69,7 +69,7 @@ export default function CreateGroup() {
           <ol className="mt-3 space-y-3">
             {NEXT.map((step, i) => (
               <li key={step} className="flex gap-3 text-sm text-muted">
-                <span className="money grid size-6 shrink-0 place-items-center rounded-full bg-surface text-xs font-bold text-forest">{i + 1}</span>
+                <span className="money grid size-6 shrink-0 place-items-center rounded-full bg-surface text-xs font-bold text-indigo">{i + 1}</span>
                 {step}
               </li>
             ))}

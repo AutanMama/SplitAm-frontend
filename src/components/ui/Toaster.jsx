@@ -25,7 +25,7 @@ export default function Toaster() {
         const Icon = isError ? CircleAlert : CircleCheck
         return (
           <div key={item.id} role="status" className="animate-toast pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-2xl bg-ink px-4 py-3 text-sm font-medium text-white shadow-float">
-            <Icon className={`size-5 shrink-0 ${isError ? 'text-danger-soft' : 'text-lime'}`} aria-hidden />
+            <Icon className={`size-5 shrink-0 ${isError ? 'text-danger-soft' : 'text-kola'}`} aria-hidden />
             <p className="leading-snug">{item.message}</p>
           </div>
         )

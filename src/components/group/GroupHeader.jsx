@@ -27,7 +27,7 @@ export default function GroupHeader({ group, isAdmin, onAddPeople }) {
       </Link>
       <div className="mt-3 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="min-w-0">
-          <h1 className="text-3xl font-bold md:text-4xl">{group.name}</h1>
+          <h1 className="serif text-4xl md:text-5xl">{group.name}</h1>
           {group.description && <p className="mt-1 max-w-xl text-muted">{group.description}</p>}
           <div className="mt-3 flex items-center gap-3">
             <AvatarStack names={group.members.map((m) => m.name || 'Member')} />
@@ -38,11 +38,11 @@ export default function GroupHeader({ group, isAdmin, onAddPeople }) {
           <button
             type="button"
             onClick={copyCode}
-            className="flex h-11 items-center gap-3 rounded-xl border border-line bg-surface px-3.5 text-left shadow-card hover:border-forest/40"
+            className="flex h-11 items-center gap-3 rounded-xl border border-line bg-surface px-3.5 text-left shadow-card hover:border-indigo/40"
             aria-label={`Copy invite code ${group.inviteCode}`}
           >
             <span>
-              <span className="block text-[11px] leading-none text-muted">Invite code</span>
+              <span className="block text-xs leading-none text-muted">Invite code</span>
               <span className="font-mono text-sm font-semibold tracking-wider">{group.inviteCode}</span>
             </span>
             {copied ? <Check className="size-4 text-paid" aria-hidden /> : <Copy className="size-4 text-muted" aria-hidden />}

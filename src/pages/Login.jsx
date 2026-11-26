@@ -35,7 +35,7 @@ export default function Login() {
       footer={
         <>
           New to SplitAm?{' '}
-          <Link to="/register" className="font-semibold text-forest underline-offset-4 hover:underline">
+          <Link to="/register" className="font-semibold text-indigo underline-offset-4 hover:underline">
             Create an account
           </Link>
         </>

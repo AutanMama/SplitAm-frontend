@@ -1,5 +1,5 @@
 // Circular progress, e.g. "round 3 of 10".
-export default function ProgressRing({ value, max, size = 88, stroke = 8, children, trackClass = 'stroke-white/15', barClass = 'stroke-lime' }) {
+export default function ProgressRing({ value, max, size = 88, stroke = 8, children, trackClass = 'stroke-white/15', barClass = 'stroke-kola' }) {
   const r = (size - stroke) / 2
   const c = 2 * Math.PI * r
   const pct = max ? Math.min(1, value / max) : 0

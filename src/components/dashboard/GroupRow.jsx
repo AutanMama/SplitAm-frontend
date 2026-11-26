@@ -15,7 +15,7 @@ function AjoStatus({ ajo, stake }) {
       <Badge tone="neutral">
         Round {ajo.currentCycle || 1} of {ajo.totalRounds || ajo.rotation?.length}
       </Badge>
-      {stake.nextTurnRound === (ajo.currentCycle || 1) && <Badge tone="lime">Your turn</Badge>}
+      {stake.nextTurnRound === (ajo.currentCycle || 1) && <Badge tone="kola">Your turn</Badge>}
     </span>
   )
 }
@@ -29,7 +29,7 @@ export default function GroupRow({ group, ajo, stake }) {
   return (
     <Link
       to={`/group/${group._id}`}
-      className="group flex items-center gap-4 rounded-card border border-line bg-surface p-4 shadow-card transition hover:border-forest/30 md:p-5"
+      className="group flex items-center gap-4 rounded-card border border-line bg-surface p-4 shadow-card transition hover:border-indigo/30 md:p-5"
     >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-3">

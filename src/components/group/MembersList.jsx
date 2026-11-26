@@ -47,7 +47,7 @@ export default function MembersList({ group, isAdmin, currentUserId, onUpdate })
                 <p className="flex flex-wrap items-center gap-1.5 font-semibold">
                   <span className="truncate">{name}</span>
                   {isMe && <span className="text-sm font-normal text-muted">(you)</span>}
-                  {m.role === 'ADMIN' && <Badge tone="forest">Admin</Badge>}
+                  {m.role === 'ADMIN' && <Badge tone="indigo">Admin</Badge>}
                   {ghost && <Badge tone="due">No app yet</Badge>}
                 </p>
                 <p className="truncate text-sm text-muted">{contact}</p>

@@ -29,7 +29,7 @@ export default function JoinGroupCard({ onJoined }) {
   return (
     <Card>
       <div className="flex items-start gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-sunk text-forest">
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-sunk text-indigo">
           <Ticket className="size-5" aria-hidden />
         </span>
         <div>
@@ -43,7 +43,7 @@ export default function JoinGroupCard({ onJoined }) {
         </label>
         <input
           id="invite-code"
-          className="h-11 min-w-0 flex-1 rounded-xl border border-line bg-surface px-3 text-center font-mono text-base font-semibold tracking-[0.2em] uppercase placeholder:tracking-normal placeholder:text-muted/70 focus:border-forest focus:ring-4 focus:ring-forest/10 focus:outline-none"
+          className="h-11 min-w-0 flex-1 rounded-xl border border-line bg-surface px-3 text-center font-mono text-base font-semibold tracking-[0.2em] uppercase placeholder:tracking-normal placeholder:text-muted/70 focus:border-indigo focus:ring-4 focus:ring-indigo/10 focus:outline-none"
           placeholder="AX72J3F1"
           maxLength={12}
           value={code}

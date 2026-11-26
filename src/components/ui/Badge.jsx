@@ -3,8 +3,8 @@ const TONES = {
   paid: 'bg-paid-soft text-paid',
   due: 'bg-due-soft text-due',
   danger: 'bg-danger-soft text-danger',
-  forest: 'bg-forest text-on-forest',
-  lime: 'bg-lime text-on-lime',
+  indigo: 'bg-indigo text-on-indigo',
+  kola: 'bg-kola text-on-kola',
 }
 
 export default function Badge({ tone = 'neutral', icon: Icon, className = '', children }) {

@@ -1,7 +1,7 @@
 import { useId } from 'react'
 
 const INPUT =
-  'w-full rounded-xl border border-line bg-surface px-3.5 text-ink placeholder:text-muted/70 transition focus:border-forest focus:outline-none focus:ring-4 focus:ring-forest/10'
+  'w-full rounded-xl border border-line bg-surface px-3.5 text-ink placeholder:text-muted/70 transition focus:border-indigo focus:outline-none focus:ring-4 focus:ring-indigo/10'
 
 export function Input({ className = '', ...props }) {
   return <input className={`h-12 ${INPUT} ${className}`} {...props} />

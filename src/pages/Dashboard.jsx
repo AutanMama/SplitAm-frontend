@@ -70,7 +70,7 @@ export default function Dashboard() {
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-muted">{greeting()},</p>
-          <h1 className="text-3xl font-bold md:text-4xl">{firstName(user?.name || '')}</h1>
+          <h1 className="serif text-4xl md:text-5xl">{firstName(user?.name || '')}</h1>
         </div>
         <div className="hidden md:block">
           <Button as={Link} to="/create-group">

@@ -72,7 +72,7 @@ export default function StartAjoSheet({ open, onClose, groupId, onCreated }) {
                 aria-pressed={form.frequency === f}
                 onClick={() => setForm((v) => ({ ...v, frequency: f }))}
                 className={`h-11 rounded-xl border text-sm font-semibold capitalize transition ${
-                  form.frequency === f ? 'border-forest bg-forest text-on-forest' : 'border-line bg-surface text-ink hover:border-forest/40'
+                  form.frequency === f ? 'border-indigo bg-indigo text-on-indigo' : 'border-line bg-surface text-ink hover:border-indigo/40'
                 }`}
               >
                 {f}
@@ -82,10 +82,10 @@ export default function StartAjoSheet({ open, onClose, groupId, onCreated }) {
         </fieldset>
 
         {showPot && (
-          <div className="rounded-2xl bg-forest p-4 text-on-forest">
-            <p className="text-sm text-forest-muted">Each round’s pot</p>
-            <p className="money text-2xl font-bold text-lime">{naira(amount * rounds)}</p>
-            <p className="text-sm text-forest-muted">
+          <div className="rounded-2xl bg-indigo p-4 text-on-indigo">
+            <p className="text-sm text-indigo-muted">Each round’s pot</p>
+            <p className="money text-2xl font-bold text-kola">{naira(amount * rounds)}</p>
+            <p className="text-sm text-indigo-muted">
               {plural(rounds, 'round')} × {naira(amount)} per hand
             </p>
           </div>

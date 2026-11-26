@@ -13,7 +13,7 @@ import { apiError, formatPhone } from '../lib/format'
 function Row({ icon: Icon, label, children, action }) {
   return (
     <div className="flex items-center gap-4 py-4">
-      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-sunk text-forest">
+      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-sunk text-indigo">
         <Icon className="size-5" aria-hidden />
       </span>
       <div className="min-w-0 flex-1">
@@ -66,7 +66,7 @@ export default function Profile() {
     <div className="mx-auto max-w-2xl space-y-5">
       <Card className="flex flex-col items-center text-center">
         <Avatar name={user.name} size="xl" tone="me" />
-        <h1 className="mt-4 text-2xl font-bold">{user.name}</h1>
+        <h1 className="serif mt-4 text-3xl">{user.name}</h1>
         <p className="mt-1 text-muted">{user.email}</p>
       </Card>
 

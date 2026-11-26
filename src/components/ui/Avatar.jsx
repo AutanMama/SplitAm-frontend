@@ -4,10 +4,10 @@ const SIZES = { sm: 'size-8 text-xs', md: 'size-10 text-sm', lg: 'size-14 text-l
 
 const TONES = {
   neutral: 'bg-sunk text-ink',
-  me: 'bg-forest text-on-forest',
+  me: 'bg-indigo text-on-indigo',
   ghost: 'border border-dashed border-due/60 bg-due-soft text-due',
   paid: 'bg-paid text-white',
-  turn: 'bg-lime text-on-lime',
+  turn: 'bg-kola text-on-kola',
 }
 
 export default function Avatar({ name, size = 'md', tone = 'neutral', className = '' }) {
