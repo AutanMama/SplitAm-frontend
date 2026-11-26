@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { BrowserRouter as Router, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 
 import Dashboard from './pages/Dashboard'
+import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import GroupDetails from './pages/GroupDetails'
@@ -25,7 +26,9 @@ function PrivateRoute({ children }) {
 
 function Shell() {
   const { pathname } = useLocation()
-  const isAuthPage = pathname === '/login' || pathname === '/register'
+  const signedIn = Boolean(getUser())
+  // Public pages draw their own header and use the full width.
+  const isPublicPage = pathname === '/login' || pathname === '/register' || (pathname === '/' && !signedIn)
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -33,15 +36,15 @@ function Shell() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      {!isAuthPage && <AppNav />}
+      {!isPublicPage && <AppNav />}
       <Toaster />
       <ConfirmHost />
 
-      <main className={isAuthPage ? 'flex-1' : 'mx-auto w-full max-w-6xl flex-1 px-4 pt-5 pb-28 md:px-6 md:pt-10 md:pb-16'}>
+      <main className={isPublicPage ? 'flex-1' : 'mx-auto w-full max-w-6xl flex-1 px-4 pt-5 pb-28 md:px-6 md:pt-10 md:pb-16'}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+          <Route path="/" element={signedIn ? <Dashboard /> : <Landing />} />
           <Route path="/create-group" element={<PrivateRoute><CreateGroup /></PrivateRoute>} />
           <Route path="/group/:groupId" element={<PrivateRoute><GroupDetails /></PrivateRoute>} />
           <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />

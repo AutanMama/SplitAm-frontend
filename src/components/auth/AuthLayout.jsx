@@ -13,7 +13,7 @@ export default function AuthLayout({ title, subtitle, children, footer }) {
   return (
     <div className="grid min-h-dvh lg:grid-cols-[1.05fr_1fr]">
       <aside className="relative hidden flex-col justify-between overflow-hidden bg-forest p-12 text-on-forest lg:flex">
-        <Link to="/login" className="flex items-center gap-2" aria-label="SplitAm">
+        <Link to="/" className="flex items-center gap-2" aria-label="SplitAm home">
           <LogoMark className="size-9" />
           <span className="text-xl font-bold">SplitAm</span>
         </Link>
@@ -34,7 +34,7 @@ export default function AuthLayout({ title, subtitle, children, footer }) {
       </aside>
 
       <section className="flex flex-col px-5 py-8 sm:px-10 lg:justify-center lg:px-16">
-        <Link to="/login" className="mb-10 flex items-center gap-2 lg:hidden" aria-label="SplitAm">
+        <Link to="/" className="mb-10 flex items-center gap-2 lg:hidden" aria-label="SplitAm home">
           <LogoMark />
           <span className="text-lg font-bold">SplitAm</span>
         </Link>
