@@ -1,59 +1,80 @@
 # SplitAm brand guide
 
-SplitAm runs ajo (also called esusu or adashi): a group puts money in every round, and one hand collects the whole pot. People only use it if they trust it, so the design has one job: make money and turns obvious. Who paid, who hasn't, whose turn it is, and what you owe.
+SplitAm runs ajo (also called esusu or adashi): a circle puts money in every round, and one hand collects the whole pot. The identity comes from **adire**, the indigo resist-dyed cloth of the Yoruba. Ajo and adire belong to the same world, the market women's circle, so the product looks like where ajo comes from, not like every other fintech.
 
 ## Principles
 
-1. **Money first.** Amounts are the biggest thing on any screen and always use tabular figures.
-2. **Status is colour plus words.** Paid is green, due is amber, a problem is red, and each always comes with a label, never colour alone.
-3. **Calm by default.** Forest green and white for everyday screens. Lime appears only for money moments: the pot, your turn, a completed round.
+1. **The cloth is the signature.** Adire motifs appear where it matters: the home banner, the money card, the ajo card, the sign-in panel. Never as random decoration on every surface.
+2. **Indigo for trust, kola for money.** Deep indigo carries the brand and the main actions. Kola-nut ochre marks money moments: the pot, your turn, a completed round.
+3. **Editorial, not template.** Headlines are set in a high-contrast serif. Sections tell a story ("a round in the life of an ajo", "five rules every fair ajo keeps") instead of the usual feature grid.
 4. **Mobile first.** Most people open SplitAm from a WhatsApp link on their phone. Every screen is designed at 390px first.
 
 ## Colour
 
 All colours are tokens in `src/styles/index.css`. Components never use raw hex values.
 
-| Token           | Hex       | Use                                              |
-| --------------- | --------- | ------------------------------------------------ |
-| `bg`            | `#F4F5F2` | App background                                   |
-| `surface`       | `#FFFFFF` | Cards, sheets                                    |
-| `sunk`          | `#EEF0EC` | Inputs, avatars, skeletons                       |
-| `line`          | `#E2E5DF` | Borders, dividers                                |
-| `ink`           | `#0F1A16` | Main text                                        |
-| `muted`         | `#5A6560` | Supporting text                                  |
-| `forest`        | `#0F3D2E` | Primary buttons, the money card, active nav      |
-| `forest-muted`  | `#A9C2B6` | Supporting text on forest                        |
-| `lime`          | `#C8F169` | Money highlights on forest; never text on light  |
-| `paid`          | `#1F7A4D` | Paid, completed (with `paid-soft` background)    |
-| `due`           | `#8A5200` | Due, pending, waiting (with `due-soft`)          |
-| `danger`        | `#B3261E` | Errors, destructive actions (with `danger-soft`) |
+| Token          | Hex       | Use                                                |
+| -------------- | --------- | -------------------------------------------------- |
+| `bg`           | `#F7F7F4` | App background (undyed cotton)                     |
+| `surface`      | `#FFFFFF` | Cards, sheets                                      |
+| `sunk`         | `#ECECE6` | Inputs, avatars, skeletons                         |
+| `line`         | `#E1E1DA` | Borders, dividers                                  |
+| `ink`          | `#141826` | Main text                                          |
+| `muted`        | `#575C6B` | Supporting text                                    |
+| `indigo`       | `#1B2A5E` | Primary buttons, money card, ajo card              |
+| `indigo-deep`  | `#0F1A3D` | Hero and sign-in panel                             |
+| `indigo-muted` | `#B4BEDD` | Supporting text on indigo, cloth motifs            |
+| `kola`         | `#E1A33B` | The pot, your turn, highlights (fill only)         |
+| `kola-text`    | `#8A5A0B` | Kola used as text on light backgrounds             |
+| `paid`         | `#1F7A4D` | Paid, completed (with `paid-soft`)                 |
+| `due`          | `#7A4F08` | Waiting, pending (with `due-soft`)                 |
+| `danger`       | `#B3261E` | Errors, destructive actions (with `danger-soft`)   |
 
 ### Contrast (WCAG 2.1)
 
-| Pair                     | Ratio | Level |
-| ------------------------ | ----- | ----- |
-| ink on bg                | 16.3  | AAA   |
-| muted on bg              | 5.54  | AA    |
-| muted on sunk            | 5.28  | AA    |
-| white on forest          | 12.2  | AAA   |
-| lime on forest           | 9.40  | AAA   |
-| forest-muted on forest   | 6.41  | AA    |
-| paid on paid-soft        | 4.59  | AA    |
-| due on due-soft          | 5.72  | AA    |
-| danger on danger-soft    | 5.55  | AA    |
+| Pair                       | Ratio | Level |
+| -------------------------- | ----- | ----- |
+| ink on bg                  | 16.5  | AAA   |
+| muted on bg                | 6.21  | AA    |
+| muted on sunk              | 5.62  | AA    |
+| white on indigo            | 13.6  | AAA   |
+| kola on indigo             | 6.17  | AA    |
+| kola on indigo-deep        | 7.69  | AAA   |
+| indigo-muted on indigo     | 7.37  | AAA   |
+| kola-text on bg            | 5.51  | AA    |
+| paid on paid-soft          | 4.59  | AA    |
+| danger on danger-soft      | 5.55  | AA    |
 
 ## Type
 
-- **Onest** for everything. It's friendly, but still serious enough for money.
-- **Geist Mono** only for invite codes and references people type or read out loud.
-- Amounts use the `money` class: tabular figures and tight tracking.
+- **Gloock** for headlines, page titles and big numerals. It's a high-contrast serif with the confidence of a printed banknote.
+- **Schibsted Grotesk** for everything else. It's a newspaper grotesk: clear at small sizes, with more character than the usual UI fonts.
+- **Geist Mono** only for invite codes and references people read out loud.
+- Gloock has no naira sign. Amounts are always set in the grotesk, and serif text that contains ₦ uses `SerifText`, which swaps just the symbol.
+- Minimum text size is 12px everywhere.
 
-## Shape
+## Adire motifs
 
-- Cards 20px radius, buttons and inputs 12px, avatars round.
-- One card shadow. Sheets and toasts use the float shadow.
-- On phones, dialogs are bottom sheets so they're easy to reach with a thumb.
+Drawn as SVG pattern tiles in `src/components/brand/AdirePattern.jsx`:
+
+| Motif     | Based on                         | Used for                              |
+| --------- | -------------------------------- | ------------------------------------- |
+| `oniko`   | Tie-dye concentric circles       | Money card, ajo card, closing banner  |
+| `lattice` | Eleko starch-resist diamond grid | Hero, sign-in panel, story section    |
+| `ladder`  | Alabere stitched lines           | The cloth strip between sections      |
+
+The **Adire wheel** (`AdireWheel.jsx`) is the brand's hero image: each member of the circle is a segment of cloth around the pot, and the kola segment moves to whoever collects next.
+
+## Logo
+
+Eight dots around a kola centre: the members of a circle around the pot. One dot is kola, for whoever's turn it is. The wordmark is set in Gloock.
+
+## Motion
+
+- Landing entrance: the headline, text and buttons rise in one after another, and the kola underline draws itself under "wahala".
+- The wheel passes the turn every 2.2 seconds.
+- Sheets slide up and toasts drop in. Everything respects `prefers-reduced-motion`.
 
 ## Voice
 
-Short, plain and Nigerian-friendly: "Collects this round", "I've paid", "Send pot", "Let in". No jargon like "disburse" or "contribution cycle" in the UI.
+Short, plain and Nigerian-friendly: "Start your circle", "Collects this round", "I've paid", "Send pot", "Let in". Never "disburse" or "contribution cycle" in the UI.

@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import '@fontsource-variable/onest'
+import '@fontsource/gloock'
+import '@fontsource-variable/schibsted-grotesk'
 import '@fontsource-variable/geist-mono'
 import App from './App.jsx'
 import './styles/index.css'

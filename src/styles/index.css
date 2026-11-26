@@ -2,33 +2,39 @@
 
 /* Brand tokens. Components use these names only; see BRAND.md. */
 @theme {
-  --color-bg: #f4f5f2;
+  --color-bg: #f7f7f4;
   --color-surface: #ffffff;
-  --color-sunk: #eef0ec;
-  --color-line: #e2e5df;
-  --color-ink: #0f1a16;
-  --color-muted: #5a6560;
+  --color-sunk: #ecece6;
+  --color-line: #e1e1da;
+  --color-ink: #141826;
+  --color-muted: #575c6b;
 
-  --color-forest: #0f3d2e;
-  --color-forest-hover: #0b2f23;
-  --color-forest-muted: #a9c2b6;
-  --color-on-forest: #ffffff;
-  --color-lime: #c8f169;
-  --color-on-lime: #0f1a16;
+  /* Adire indigo and kola-nut ochre. */
+  --color-indigo: #1b2a5e;
+  --color-indigo-deep: #0f1a3d;
+  --color-indigo-hover: #142150;
+  --color-indigo-muted: #b4bedd;
+  --color-indigo-soft: #e7eaf5;
+  --color-on-indigo: #ffffff;
+  --color-kola: #e1a33b;
+  --color-kola-text: #8a5a0b;
+  --color-kola-soft: #fbefd9;
+  --color-on-kola: #0f1a3d;
 
   --color-paid: #1f7a4d;
   --color-paid-soft: #e3f2e9;
-  --color-due: #8a5200;
-  --color-due-soft: #fdf1dc;
+  --color-due: #7a4f08;
+  --color-due-soft: #fbefd9;
   --color-danger: #b3261e;
   --color-danger-soft: #fce8e6;
 
-  --font-sans: 'Onest Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Schibsted Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Gloock', ui-serif, Georgia, serif;
   --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
 
-  --radius-card: 1.25rem;
-  --shadow-card: 0 1px 2px rgb(15 26 22 / 0.04), 0 4px 16px -8px rgb(15 26 22 / 0.12);
-  --shadow-float: 0 12px 40px -12px rgb(15 26 22 / 0.35);
+  --radius-card: 0.875rem;
+  --shadow-card: 0 1px 2px rgb(15 26 61 / 0.04), 0 4px 16px -8px rgb(15 26 61 / 0.12);
+  --shadow-float: 0 12px 40px -12px rgb(15 26 61 / 0.35);
 }
 
 body {
@@ -39,7 +45,15 @@ body {
 h1,
 h2,
 h3 {
-  letter-spacing: -0.02em;
+  letter-spacing: -0.015em;
+}
+
+/* Headlines use Gloock, a high-contrast serif. Body copy stays in the grotesk. */
+.serif {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.04;
 }
 
 .money {
@@ -48,7 +62,7 @@ h3 {
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-forest);
+  outline: 2px solid var(--color-indigo);
   outline-offset: 2px;
 }
 
@@ -69,6 +83,17 @@ h3 {
     opacity: 0;
   }
 }
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+@keyframes draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
 @keyframes shimmer {
   to {
     transform: translateX(100%);
@@ -83,6 +108,16 @@ h3 {
 }
 .animate-toast {
   animation: toast-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Landing entrance: set --d on each element to stagger it. */
+.rise {
+  animation: rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+.draw path {
+  stroke-dasharray: 1;
+  animation: draw 0.9s cubic-bezier(0.65, 0, 0.35, 1) 0.6s both;
 }
 
 .skeleton {
@@ -103,6 +138,8 @@ h3 {
   .animate-sheet,
   .animate-fade,
   .animate-toast,
+  .rise,
+  .draw path,
   .skeleton::after {
     animation: none;
   }
