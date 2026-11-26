@@ -61,9 +61,12 @@ h3 {
   letter-spacing: -0.02em;
 }
 
-:focus-visible {
-  outline: 2px solid var(--color-indigo);
-  outline-offset: 2px;
+/* In the base layer so a component can still opt out with outline-none. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-indigo);
+    outline-offset: 2px;
+  }
 }
 
 @keyframes sheet-up {
