@@ -1,112 +1,71 @@
-import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react'
+import { BrowserRouter as Router, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 
+import Dashboard from './pages/Dashboard'
+import Login from './pages/Login'
+import Register from './pages/Register'
+import GroupDetails from './pages/GroupDetails'
+import CreateGroup from './pages/CreateGroup'
+import Profile from './pages/Profile'
 
-// Pages
-import Dashboard from './pages/Dashboard';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import GroupDetails from './pages/GroupDetails';
-import CreateGroup from './pages/CreateGroup';
-import Profile from './pages/Profile';
+import AppNav from './components/layout/AppNav'
+import OfflineBanner from './components/layout/OfflineBanner'
+import Toaster from './components/ui/Toaster'
+import ConfirmHost from './components/ui/ConfirmHost'
 
-// Components
-import Navbar from './components/Navbar';
-import Toaster from './components/Toaster';
+import { syncOfflineData } from './services/offlineSync'
+import api from './services/api'
+import { getUser } from './lib/session'
 
-// Services
-import { syncOfflineData } from './services/offlineSync';
-import api from './services/api';
+// The UI is gated on the stored user profile. The server enforces real auth via
+// the httpOnly session cookie, and the axios interceptor redirects to /login on 401.
+function PrivateRoute({ children }) {
+  return getUser() ? children : <Navigate to="/login" replace />
+}
 
-// Protected Route Component
-// We gate the UI on the presence of a stored user object. The server enforces
-// real auth via the httpOnly session cookie; the axios interceptor will redirect
-// to /login if any API call comes back 401.
-const PrivateRoute = ({ children }) => {
-  const isAuthenticated = !!localStorage.getItem('user');
-  return isAuthenticated ? children : <Navigate to="/login" />;
-};
+function Shell() {
+  const { pathname } = useLocation()
+  const isAuthPage = pathname === '/login' || pathname === '/register'
 
-function App() {
-  // Offline Sync Engine Trigger
   useEffect(() => {
-    const handleOnline = () => {
-      syncOfflineData(api);
-    };
+    window.scrollTo(0, 0)
+  }, [pathname])
 
-    window.addEventListener('online', handleOnline);
-    
-    if (navigator.onLine) {
-      syncOfflineData(api);
-    }
+  return (
+    <div className="flex min-h-dvh flex-col">
+      {!isAuthPage && <AppNav />}
+      <Toaster />
+      <ConfirmHost />
 
-    return () => window.removeEventListener('online', handleOnline);
-  }, []);
+      <main className={isAuthPage ? 'flex-1' : 'mx-auto w-full max-w-6xl flex-1 px-4 pt-5 pb-28 md:px-6 md:pt-10 md:pb-16'}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+          <Route path="/create-group" element={<PrivateRoute><CreateGroup /></PrivateRoute>} />
+          <Route path="/group/:groupId" element={<PrivateRoute><GroupDetails /></PrivateRoute>} />
+          <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
+
+      <OfflineBanner />
+    </div>
+  )
+}
+
+export default function App() {
+  // Flush anything queued while offline, now and whenever the connection returns.
+  useEffect(() => {
+    const flush = () => syncOfflineData(api)
+    window.addEventListener('online', flush)
+    if (navigator.onLine) flush()
+    return () => window.removeEventListener('online', flush)
+  }, [])
 
   return (
     <Router>
-      <div className="min-h-screen bg-slate-50 font-sans text-slate-900 flex flex-col">
-        <Navbar />
-        <Toaster />
-        
-        <main className="container mx-auto px-0 md:px-4 pt-4 pb-24 md:pt-28 md:pb-12 max-w-6xl flex-grow">
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-
-            {/* Private Routes */}
-            <Route 
-              path="/" 
-              element={
-                <PrivateRoute>
-                  <Dashboard />
-                </PrivateRoute>
-              } 
-            />
-
-            <Route 
-              path="/create-group" 
-              element={
-                <PrivateRoute>
-                  <CreateGroup />
-                </PrivateRoute>
-              } 
-            />
-            
-            <Route 
-              path="/group/:groupId" 
-              element={
-                <PrivateRoute>
-                  <GroupDetails />
-                </PrivateRoute>
-              } 
-            />
-
-            <Route 
-              path="/profile" 
-              element={
-                <PrivateRoute>
-                  <Profile />
-                </PrivateRoute>
-              } 
-            />
-
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </main>
-
-        {!navigator.onLine && (
-          <div className="fixed bottom-24 left-4 right-4 md:bottom-8 md:left-auto md:right-8 md:max-w-sm bg-orange-600 text-white px-5 py-3 rounded-2xl shadow-2xl z-50 border-2 border-white">
-            <p className="text-sm font-bold flex items-center gap-2">
-              You're offline. We'll save changes once you're back.
-            </p>
-          </div>
-        )}
-      </div>
+      <Shell />
     </Router>
-  );
+  )
 }
-
-export default App;
